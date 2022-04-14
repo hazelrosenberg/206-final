@@ -26,7 +26,7 @@ there is a billboard page specific to the usa.
 we can come up with other countries and I can just rename the 
 functions'''
 def spotify_100usa(tag, offset, cur):
-    token = 'BQCmwKSfuXajAF1OLaRPdutQySFPb5cNBhrcKny0sA5kPpkA8ms6_sG_MhJI9KbVTXr0yIA756SvGhCj7g_HEjOb_JQLt3L4Ek4D08HNf6tXxhPEmooPeKyEXucOhpEbwK9dEt7LsX_u0A3fFupP1kBGgikL2kjG6SKZe4MkAGsdCPmpGEU' #
+    token = ??
     base_url = #FIND BASE URL THEN +TAG +END OF URL
     bounds = {'limit': 25, 'offset': offset, 'access_token': token}
     search = requests.get(base_url, params = bounds)
@@ -40,21 +40,7 @@ def setUpDatabase(db_name):
     cur = conn.cursor()
     return cur, conn
 
-def billboard_100usa(): #are we doing usa
-    url = input('') #whatever url we will use 
-    r = requests.get('http://' + url)
-    soup = BeautifulSoup(r.text, 'lxml')
-    #look at project 2
-    #come up with variables to  look for 
-    #loop through tags and add to a list
-    return billboard #this will be what has all of the scraped data in it
 
-def bsDatabase():
-    conn = sqlite3.connect('your_database.sqlite3', check_same_thread=False)  #make a database in sqlite3 first?
-    curs = conn.cursor()
-    curs.execute("INSERT INTO your_table_name billboard='{}'".format(billboard))
-    conn.commit()
-   
 #maybe copy paste functions and do other countries?
 #next: use the select join thing for the tables
 #create visualizations
