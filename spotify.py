@@ -10,9 +10,45 @@ import matplotlib.pyplot as plt
 from  bs4 import BeautifulSoup
 #from tabulate import tabulate #dont forget pip install tabulate
 import pprint
-
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
+
+def setUpDatabase(db_name):
+    '''Sets up the database with the provided name (db_name).'''
+    path = os.path.dirname(os.path.abspath(__file__))
+    conn  = sqlite3.connect(path+'/'+db_name)
+    cur = conn.cursor()
+    return cur, conn
+
+def createSpotipyObject(cid, secret):
+    '''Creates spotipy object with client id and client secret.'''
+    client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
+    sp = spotipy.Spotify(client_credentials_manager = client_credentials_manager)
+    return sp
+
+def createGenresTable(genres, cur, conn):
+    '''Creates genres table in the database with a given list of genres, database connection, and cursor.'''
+    cur.execute('CREATE TABLE IF NOT EXISTS Genres (id INTEGER PRIMARY KEY, genre TEXT UNIQUE)')
+    for i in range(len(genres)):
+        cur.execute('INSERT OR IGNORE INTO Genres (id,genre) VALUES (?,?)', (i, genres[i]))
+    conn.commit()
+    pass
+
+def createCanadaTable(pid, sp, cur, conn):
+    cur.execute('CREATE TABLE IF NOT EXISTS CanadaSpotify (id INTEGER PRIMARY KEY, song_name TEXT UNIQUE, genre_id INTEGER)')
+    y = sp.playlist_items(pid)
+    genres = []
+    for song in y['items']:
+        song_name = song['track']['name'] #for DB
+        artist_id = song['track']['artists'][0]['id']
+        info = sp.artist(artist_id)
+        song_genres = info['genres']
+        for genre in song_genres:
+            if genre not in genres:
+                genres.append(genre)
+        if len(song_genres) > 0:
+            print(song_genres[0])
+    pass
 
 def get_song_ids():
     '''Takes spotipy object, user (spotify), playlist id, and limit (of how many tracks to return from playlist) and returns all of the track ids in a list.'''
@@ -25,40 +61,38 @@ def main():
     #cache_token = token.get_access_token()
     #spotify = spotipy.Spotify(cache_token)
 
+    #SETS UP THE DATABASE
+    cur, conn = setUpDatabase('music.db')
+
     #SETS UP SPOTIPY
     cid = 'c2b8ee04a2a045a9bb74e3c7c3451b0a'
     secret = 'c82da9cec8804c83b96ffb0679ad280a'
-    client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
-    sp = spotipy.Spotify(client_credentials_manager = client_credentials_manager)
+    sp = createSpotipyObject(cid, secret)
 
-    #CREATE DB AND GENRES TABLE
-    genres = ['Rock', 'Pop', 'Hip Hop/Rap', 'R&B', 'Country', 'Alternative', 'Classical', 'EDM', 'Jazz']
-    path = os.path.dirname(os.path.abspath(__file__))
-    conn = sqlite3.connect(path+'/'+'music.db')
-    cur = conn.cursor()
-    cur.execute('CREATE TABLE IF NOT EXISTS Genres (id INTEGER PRIMARY KEY, genre TEXT UNIQUE)')
-    for i in range(len(genres)):
-        cur.execute('INSERT OR IGNORE INTO Genres (id,genre) VALUES (?,?)', (i, genres[i]))
-    conn.commit()
+    #CREATES GENRES TABLE
+    genres = ['Rock', 'Pop', 'Hip Hop/Rap', 'R&B', 'Country', 'Alternative', 'Classical', 'EDM', 'Jazz', 'Other']
+    createGenresTable(genres, cur, conn)
 
     #COLLECT CANADA TOP 50 SONGS INFO AND CREATE TABLE
-    cur.execute('CREATE TABLE IF NOT EXISTS Canada_Spotify (id INTEGER PRIMARY KEY, song_name TEXT UNIQUE, genre_id INTEGER)')
-    top_canada = "37i9dQZEVXbMda2apknTqH"
-    y = sp.playlist_items(top_canada)
-    genres = []
-    for song in y['items']:
-        song_name = song['track']['name'] #for DB
-        artist_id = song['track']['artists'][0]['id']
-        info = sp.artist(artist_id)
-        song_genres = info['genres']
-        for genre in song_genres:
-            if genre not in genres:
-                genres.append(genre)
+    canada_pid = "37i9dQZEVXbMda2apknTqH"
+    createCanadaTable(canada_pid, sp, cur, conn)
+
+    #cur.execute('CREATE TABLE IF NOT EXISTS Canada_Spotify (id INTEGER PRIMARY KEY, song_name TEXT UNIQUE, genre_id INTEGER)')
+    #canada_pid = "37i9dQZEVXbMda2apknTqH"
+    #y = sp.playlist_items(canada_pid)
+    #genres = []
+    #for song in y['items']:
+     #   song_name = song['track']['name'] #for DB
+      #  artist_id = song['track']['artists'][0]['id']
+       # info = sp.artist(artist_id)
+        #song_genres = info['genres']
+        #for genre in song_genres:
+         ##   if genre not in genres:
+           #     genres.append(genre)
+        #if len(song_genres) > 0:
+         #   print(song_genres[0])
     #print(genres)
 
-    
-
-    #cur,  conn  = setUpDatabase('spotify.db')
 
 main()
 
@@ -85,13 +119,6 @@ functions'''
     #json1 = search.json()
     #for_db = []
     #loop through and put items we need  into a list
-
-#def setUpDatabase(db_name):
- #   path = os.path.dirname(os.path.abspath(__file__))
-  #  conn  = sqlite3.connect(path+'/'+db_name)
-   # cur = conn.cursor()
-    #return cur, conn
-
 
 #maybe copy paste functions and do other countries?
 #next: use the select join thing for the tables
