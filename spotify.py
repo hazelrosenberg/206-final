@@ -9,35 +9,70 @@ import csv
 import matplotlib.pyplot as plt
 from  bs4 import BeautifulSoup
 #from tabulate import tabulate #dont forget pip install tabulate
+import pprint
 
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 
 def get_song_ids():
     '''Takes spotipy object, user (spotify), playlist id, and limit (of how many tracks to return from playlist) and returns all of the track ids in a list.'''
-
-    cid = 'c2b8ee04a2a045a9bb74e3c7c3451b0a'
-    secret = 'c82da9cec8804c83b96ffb0679ad280a'
-
-    client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
-
-    sp = spotipy.Spotify(client_credentials_manager = client_credentials_manager)
-
-    user = "spotify"
-    top_usa = "37i9dQZEVXbLp5XoPON0wI"
-    limit = 1
-
-    #x = sp.user_playlist_tracks("spotify", "37i9dQZEVXbLp5XoPON0wI", limit=1)
-    x = sp.user_playlist_tracks(user, top_usa, limit=1)
-    print(x['items'][0]['track']['id'])
     pass
 
+
+def main():
+    #token = spotipy.oauth2.SpotifyClientCredentials(client_id='c2b8ee04a2a045a9bb74e3c7c3451b0a', client_secret='c82da9cec8804c83b96ffb0679ad280a')
+
+    #cache_token = token.get_access_token()
+    #spotify = spotipy.Spotify(cache_token)
+
+    #SETS UP SPOTIPY
+    cid = 'c2b8ee04a2a045a9bb74e3c7c3451b0a'
+    secret = 'c82da9cec8804c83b96ffb0679ad280a'
+    client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
+    sp = spotipy.Spotify(client_credentials_manager = client_credentials_manager)
+
+    #CREATE DB AND GENRES TABLE
+    genres = ['Rock', 'Pop', 'Hip Hop/Rap', 'R&B', 'Country', 'Alternative', 'Classical', 'EDM', 'Jazz']
+    path = os.path.dirname(os.path.abspath(__file__))
+    conn = sqlite3.connect(path+'/'+'music.db')
+    cur = conn.cursor()
+    cur.execute('CREATE TABLE IF NOT EXISTS Genres (id INTEGER PRIMARY KEY, genre TEXT UNIQUE)')
+    for i in range(len(genres)):
+        cur.execute('INSERT OR IGNORE INTO Genres (id,genre) VALUES (?,?)', (i, genres[i]))
+    conn.commit()
+
+    #COLLECT CANADA TOP 50 SONGS INFO AND CREATE TABLE
+    cur.execute('CREATE TABLE IF NOT EXISTS Canada_Spotify (id INTEGER PRIMARY KEY, song_name TEXT UNIQUE, genre_id INTEGER)')
+    top_canada = "37i9dQZEVXbMda2apknTqH"
+    y = sp.playlist_items(top_canada)
+    genres = []
+    for song in y['items']:
+        song_name = song['track']['name'] #for DB
+        artist_id = song['track']['artists'][0]['id']
+        info = sp.artist(artist_id)
+        song_genres = info['genres']
+        for genre in song_genres:
+            if genre not in genres:
+                genres.append(genre)
+    #print(genres)
+
+    
+
+    #cur,  conn  = setUpDatabase('spotify.db')
+
+main()
+
+#function to get list of ids of songs
+
+#function to get genres of songs from ids
+
+#function to put in DB
 
 #client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
 #sp = spotipy.Spotify(client_credentials_manager = client_credentials_manager)
 #add token to the url, writing my version of the function here
 
-country_table = [['USA', '01'], ['Canada', '02']] #this is our country table we will use when we join tables later, I just wrote in random countries we may want to work with
+#country_table = [['USA', '01'], ['Canada', '02']] #this is our country table we will use when we join tables later, I just wrote in random countries we may want to work with
 '''should we use top 100 as our usa list? I do not think 
 there is a billboard page specific to the usa.
 we can come up with other countries and I can just rename the 
@@ -61,35 +96,3 @@ functions'''
 #maybe copy paste functions and do other countries?
 #next: use the select join thing for the tables
 #create visualizations
-
-def main():
-    '''token = spotipy.oauth2.SpotifyClientCredentials(client_id='c2b8ee04a2a045a9bb74e3c7c3451b0a', client_secret='c82da9cec8804c83b96ffb0679ad280a')
-
-    cache_token = token.get_access_token()
-    spotify = spotipy.Spotify(cache_token)'''
-
-    cid = 'c2b8ee04a2a045a9bb74e3c7c3451b0a'
-    secret = 'c82da9cec8804c83b96ffb0679ad280a'
-
-    client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
-
-    sp = spotipy.Spotify(client_credentials_manager = client_credentials_manager)
-
-    user = "spotify"
-    top_usa = "37i9dQZEVXbLp5XoPON0wI"
-    limit = 1
-
-    get_song_ids()
-    #x = sp.user_playlist_tracks("spotify", "37i9dQZEVXbLp5XoPON0wI", limit=1)
-    #x = sp.user_playlist_tracks(user, top_usa, limit=1)
-    #print(x['items'][0]['track']['id'])
-
-    #cur,  conn  = setUpDatabase('spotify.db')
-
-main()
-
-#function to get list of ids of songs
-
-#function to get genres of songs from ids
-
-#function to put in DB
