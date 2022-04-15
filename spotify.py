@@ -35,19 +35,34 @@ def createGenresTable(genres, cur, conn):
     pass
 
 def createCanadaTable(pid, sp, cur, conn):
+    ''''''
     cur.execute('CREATE TABLE IF NOT EXISTS CanadaSpotify (id INTEGER PRIMARY KEY, song_name TEXT UNIQUE, genre_id INTEGER)')
-    y = sp.playlist_items(pid)
+    conn.commit()
+    cur.execute('SELECT genre FROM Genres')
     genres = []
-    for song in y['items']:
+    for item in cur:
+        genres.append(item[0])
+    playlist_songs = sp.playlist_items(pid)
+    for song in playlist_songs['items']:
         song_name = song['track']['name'] #for DB
         artist_id = song['track']['artists'][0]['id']
-        info = sp.artist(artist_id)
-        song_genres = info['genres']
-        for genre in song_genres:
-            if genre not in genres:
-                genres.append(genre)
+        artist_info = sp.artist(artist_id)
+        song_genres = artist_info['genres']
         if len(song_genres) > 0:
-            print(song_genres[0])
+            song_genre = song_genres[0]
+        else:
+            song_genre = 'Other'
+        for g in genres:
+            if g.lower() in song_genre:
+                song_genre = g
+                break
+            else:
+                continue
+        if song_genre not in genres:
+            song_genre = 'Other'
+        print(song_genre)
+            
+
     pass
 
 def get_song_ids():
@@ -70,28 +85,12 @@ def main():
     sp = createSpotipyObject(cid, secret)
 
     #CREATES GENRES TABLE
-    genres = ['Rock', 'Pop', 'Hip Hop/Rap', 'R&B', 'Country', 'Alternative', 'Classical', 'EDM', 'Jazz', 'Other']
+    genres = ['Rock', 'Pop', 'Hip Hop', 'Rap', 'R&B', 'Country', 'Alt', 'Classical', 'EDM', 'Jazz', 'Other']
     createGenresTable(genres, cur, conn)
 
     #COLLECT CANADA TOP 50 SONGS INFO AND CREATE TABLE
     canada_pid = "37i9dQZEVXbMda2apknTqH"
     createCanadaTable(canada_pid, sp, cur, conn)
-
-    #cur.execute('CREATE TABLE IF NOT EXISTS Canada_Spotify (id INTEGER PRIMARY KEY, song_name TEXT UNIQUE, genre_id INTEGER)')
-    #canada_pid = "37i9dQZEVXbMda2apknTqH"
-    #y = sp.playlist_items(canada_pid)
-    #genres = []
-    #for song in y['items']:
-     #   song_name = song['track']['name'] #for DB
-      #  artist_id = song['track']['artists'][0]['id']
-       # info = sp.artist(artist_id)
-        #song_genres = info['genres']
-        #for genre in song_genres:
-         ##   if genre not in genres:
-           #     genres.append(genre)
-        #if len(song_genres) > 0:
-         #   print(song_genres[0])
-    #print(genres)
 
 
 main()
