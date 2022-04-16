@@ -3,7 +3,6 @@ import sqlite3
 import json
 import os
 import sys
-import matplotlib
 import unittest
 import csv
 import matplotlib.pyplot as plt
@@ -87,7 +86,54 @@ def createUKTable(data, cur, conn, offset=0):
         conn.commit()
     pass
 
+def getCanadaGenreCounts(cur):
+    '''Uses the cursor object to select all the genres from the Genres table in the database (music.db), and then selects the count of how many songs of each genre are in the CanadaSpotify table by joining the Genres and CanadaSpotify tables on the genre ids. Returns the count and name of each genre as a tuple in a list of tuples.'''
+    l = []
+    cur.execute('SELECT genre FROM Genres')
+    x = cur.fetchall()
+    for item in x:
+        cur.execute('SELECT COUNT(genre_id) FROM CanadaSpotify JOIN Genres ON CanadaSpotify.genre_id = Genres.id WHERE Genres.genre = ?', (item[0], ))
+        l.append((cur.fetchone()[0], item[0]))
+    return l
+    pass
+
+def getUKGenreCounts(cur):
+    '''Uses the cursor object to select all the genres from the Genres table in the database (music.db), and then selects the count of how many songs of each genre are in the UKSpotify table by joining the Genres and UKSpotify tables on the genre ids. Returns the count and name of each genre as a tuple in a list of tuples.'''
+    l = []
+    cur.execute('SELECT genre FROM Genres')
+    x = cur.fetchall()
+    for item in x:
+        cur.execute('SELECT COUNT(genre_id) FROM UKSpotify JOIN Genres ON UKSpotify.genre_id = Genres.id WHERE Genres.genre = ?', (item[0], ))
+        l.append((cur.fetchone()[0], item[0]))
+    return l
+    pass
+
+def createPieChart(cur):
+    ''''''
+    
+
+
+    #labels = []
+    #sizes = []
+    #total = 0
+    #for tup in data:
+     #   labels.append(tup[1])
+      #  total += tup[0]
+
+    #for tup in data:
+     #   size = (tup[0]/total) * 360
+      #  sizes.append(size)
+
+    #colors = ['gold', 'yellowgreen', 'lightcoral', 'lightskyblue', 'purple']
+    #plt.pie(sizes, labels=labels, colors=colors)
+    #plt.axis('equal')
+    #plt.title('Number of Votes for Movies')
+    #plt.tight_layout()
+    #plt.show()
+    pass
+
 def main():
+    ''''''
     #SETS UP THE DATABASE
     cur, conn = setUpDatabase('music.db')
 
@@ -120,21 +166,20 @@ def main():
     except:
         createUKTable(uk_data, cur, conn)
 
+    #GET GENRE COUNTS FROM DATABASE
+    canada_genres = getCanadaGenreCounts(cur)
+    uk_genres = getUKGenreCounts(cur)
+
+    #CREATE PIE CHARTS SHOWING PROPORTIONS OF EACH GENRE BY NUMBER OF SONGS
+    
+    pass
 
 
 if __name__ == '__main__':
     main()
 
 
-#function to get list of ids of songs
-
-#function to get genres of songs from ids
-
-#function to put in DB
-
 #token = spotipy.oauth2.SpotifyClientCredentials(client_id='c2b8ee04a2a045a9bb74e3c7c3451b0a', client_secret='c82da9cec8804c83b96ffb0679ad280a')
 
 #cache_token = token.get_access_token()
-#spotify = spotipy.Spotify(cache_token)
-
-    
+#spotify = spotipy.Spotify(cache_token) 
