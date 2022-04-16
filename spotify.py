@@ -76,8 +76,15 @@ def createCanadaTable(data, cur, conn, offset=0):
         conn.commit()    
     pass
 
-def get_song_ids():
-    '''Takes spotipy object, user (spotify), playlist id, and limit (of how many tracks to return from playlist) and returns all of the track ids in a list.'''
+def createUKTable(data, cur, conn, offset=0):
+    '''Creates UKSpotify table in the database (music.db), if it doesn't already exist, with the cursor and connection objects passed in as parameters. Takes the offset paramater (an integer that defaults to 0 if not passed in otherwise as a parameter) and adds 25 to it to create a range with a length of 25 to add 25 items at a time to the database. Loops through the items in the list passed in as a parameter (data) to add items to the database.'''
+    cur.execute('CREATE TABLE IF NOT EXISTS UKSpotify (id INTEGER PRIMARY KEY, song_name TEXT UNIQUE, genre_id INTEGER)')
+    conn.commit()
+    r = offset + 25
+    for i in range(offset, r):
+        song_info = data[i]
+        cur.execute('INSERT OR IGNORE INTO UKSpotify (id,song_name,genre_id) VALUES (?,?,?)', (i, song_info[0], song_info[1]))
+        conn.commit()
     pass
 
 def main():
@@ -97,12 +104,21 @@ def main():
     canada_pid = "37i9dQZEVXbMda2apknTqH"
     canada_data = getPlaylistData(canada_pid, sp, cur)
 
+    #COLLECT UK TOP 50 SONGS INFO
+    uk_pid = '37i9dQZEVXbMwmF30ppw50'
+    uk_data = getPlaylistData(uk_pid, sp, cur)
+
     #CREATE TABLE IN DATABASE AND ADD DATA 25 ITEMS AT A TIME (RUN CODE TWICE)
     try:
         cur.execute('SELECT * FROM CanadaSpotify')
         createCanadaTable(canada_data, cur, conn, 25)
     except:
         createCanadaTable(canada_data, cur, conn)
+    try:
+        cur.execute('SELECT * FROM UKSpotify')
+        createUKTable(uk_data, cur, conn, 25)
+    except:
+        createUKTable(uk_data, cur, conn)
 
 
 
