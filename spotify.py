@@ -108,28 +108,23 @@ def getUKGenreCounts(cur):
     return l
     pass
 
-def createPieChart(cur):
+def createPieChart(data, country):
     ''''''
-    
-
-
-    #labels = []
-    #sizes = []
-    #total = 0
-    #for tup in data:
-     #   labels.append(tup[1])
-      #  total += tup[0]
-
-    #for tup in data:
-     #   size = (tup[0]/total) * 360
-      #  sizes.append(size)
-
-    #colors = ['gold', 'yellowgreen', 'lightcoral', 'lightskyblue', 'purple']
-    #plt.pie(sizes, labels=labels, colors=colors)
-    #plt.axis('equal')
-    #plt.title('Number of Votes for Movies')
+    labels = []
+    sizes = []
+    total = 0
+    for tup in data:
+        labels.append(tup[1])
+        total += tup[0]
+    for tup in data:
+        size = (tup[0]/total) * 360
+        sizes.append(size)
+    colors = ['green', 'orange', 'blue', 'red', 'yellow', 'pink', 'purple', 'gray', 'lightskyblue', 'lightcoral', 'yellowgreen']
+    plt.pie(sizes, labels=labels, colors=colors)
+    plt.axis('equal')
+    plt.title(country)
     #plt.tight_layout()
-    #plt.show()
+    plt.show()
     pass
 
 def main():
@@ -171,7 +166,8 @@ def main():
     uk_genres = getUKGenreCounts(cur)
 
     #CREATE PIE CHARTS SHOWING PROPORTIONS OF EACH GENRE BY NUMBER OF SONGS
-    
+    createPieChart(canada_genres, 'Canada')
+    #createPieChart(uk_genres)
     pass
 
 
