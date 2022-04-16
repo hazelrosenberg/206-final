@@ -65,16 +65,22 @@ def getPlaylistData(pid, sp, cur):
     return playlist_songs_info
     pass
 
-def createCanadaTable(data, cur, conn):
-    ''''''
+def createCanadaTable(data, offset, cur, conn):
+    '''Creates CanadaSpotify table in the database (music.db) with the cursor and connection objects passed in as parameters. Takes the offset paramater (which is an integer) and adds 25 to it to create a range with a length of 25 to add 25 items at a time to the database. Loops through the items in the list (data) passed in as a parameter to add items to the database. Increases the offset by 25 and returns that number to use as a new offset when function is called again.'''
     cur.execute('CREATE TABLE IF NOT EXISTS CanadaSpotify (id INTEGER PRIMARY KEY, song_name TEXT UNIQUE, genre_id INTEGER)')
     conn.commit()
+    r = offset + 25
+    for i in range(offset, r):
+        song_info = data[i]
+        cur.execute('INSERT OR IGNORE INTO CanadaSpotify (id,song_name,genre_id) VALUES (?,?,?)', (i, song_info[0], song_info[1]))
+        conn.commit()
+    offset += 25
+    return offset      
     pass
 
 def get_song_ids():
     '''Takes spotipy object, user (spotify), playlist id, and limit (of how many tracks to return from playlist) and returns all of the track ids in a list.'''
     pass
-
 
 def main():
     #SETS UP THE DATABASE
@@ -94,7 +100,9 @@ def main():
     canada_data = getPlaylistData(canada_pid, sp, cur)
 
     #CREATE TABLE IN DATABASE AND ADD DATA 
-    createCanadaTable(canada_data, cur, conn)
+    offset = 0
+    new_offset = createCanadaTable(canada_data, offset, cur, conn)
+    createCanadaTable(canada_data, new_offset, cur, conn)
 
 
 main()
