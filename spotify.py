@@ -34,15 +34,14 @@ def createGenresTable(genres, cur, conn):
     conn.commit()
     pass
 
-def createCanadaTable(pid, sp, cur, conn):
-    ''''''
-    cur.execute('CREATE TABLE IF NOT EXISTS CanadaSpotify (id INTEGER PRIMARY KEY, song_name TEXT UNIQUE, genre_id INTEGER)')
-    conn.commit()
+def getPlaylistData(pid, sp, cur):
+    '''Collects information for each track in a playlist (specified by playlist id parameter), including the name of the song and the genre of the song's artist, using spotipy object (sp) passed in as a parameter. Uses cursor to select genre names and ids from the database (music.db) to standardize the genres found with the spotipy object. Returns list of tuples containing the song name, and genre id for each track in the playlist.'''
     cur.execute('SELECT genre FROM Genres')
     genres = []
     for item in cur:
         genres.append(item[0])
     playlist_songs = sp.playlist_items(pid)
+    playlist_songs_info = []
     for song in playlist_songs['items']:
         song_name = song['track']['name'] #for DB
         artist_id = song['track']['artists'][0]['id']
@@ -60,9 +59,16 @@ def createCanadaTable(pid, sp, cur, conn):
                 continue
         if song_genre not in genres:
             song_genre = 'Other'
-        print(song_genre)
-            
+        cur.execute('SELECT id FROM Genres WHERE genre=?', (song_genre, ))
+        song_genre_id = cur.fetchone()[0]
+        playlist_songs_info.append((song_name, song_genre_id))
+    return playlist_songs_info
+    pass
 
+def createCanadaTable(data, cur, conn):
+    ''''''
+    cur.execute('CREATE TABLE IF NOT EXISTS CanadaSpotify (id INTEGER PRIMARY KEY, song_name TEXT UNIQUE, genre_id INTEGER)')
+    conn.commit()
     pass
 
 def get_song_ids():
@@ -83,9 +89,12 @@ def main():
     genres = ['Rock', 'Pop', 'Hip Hop', 'Rap', 'R&B', 'Country', 'Alt', 'Classical', 'EDM', 'Jazz', 'Other']
     createGenresTable(genres, cur, conn)
 
-    #COLLECT CANADA TOP 50 SONGS INFO AND CREATE TABLE
+    #COLLECT CANADA TOP 50 SONGS INFO
     canada_pid = "37i9dQZEVXbMda2apknTqH"
-    createCanadaTable(canada_pid, sp, cur, conn)
+    canada_data = getPlaylistData(canada_pid, sp, cur)
+
+    #CREATE TABLE IN DATABASE AND ADD DATA 
+    createCanadaTable(canada_data, cur, conn)
 
 
 main()
