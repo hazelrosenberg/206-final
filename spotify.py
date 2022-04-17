@@ -27,6 +27,7 @@ def createSpotipyObject(cid, secret):
 
 def createGenresTable(genres, cur, conn):
     '''Creates genres table in the database with a given list of genres, database connection, and cursor.'''
+    #cur.execute('DROP TABLE IF EXISTS Genres')
     cur.execute('CREATE TABLE IF NOT EXISTS Genres (id INTEGER PRIMARY KEY, genre TEXT UNIQUE)')
     for i in range(len(genres)):
         cur.execute('INSERT OR IGNORE INTO Genres (id,genre) VALUES (?,?)', (i, genres[i]))
@@ -66,6 +67,7 @@ def getPlaylistData(pid, sp, cur):
 
 def createCanadaTable(data, cur, conn, offset=0):
     '''Creates CanadaSpotify table in the database (music.db), if it doesn't already exist, with the cursor and connection objects passed in as parameters. Takes the offset paramater (an integer that defaults to 0 if not passed in otherwise as a parameter) and adds 25 to it to create a range with a length of 25 to add 25 items at a time to the database. Loops through the items in the list passed in as a parameter (data) to add items to the database.'''
+    #cur.execute('DROP TABLE IF EXISTS CanadaSpotify')
     cur.execute('CREATE TABLE IF NOT EXISTS CanadaSpotify (id INTEGER PRIMARY KEY, song_name TEXT UNIQUE, genre_id INTEGER)')
     conn.commit()
     r = offset + 25
@@ -77,6 +79,7 @@ def createCanadaTable(data, cur, conn, offset=0):
 
 def createUKTable(data, cur, conn, offset=0):
     '''Creates UKSpotify table in the database (music.db), if it doesn't already exist, with the cursor and connection objects passed in as parameters. Takes the offset paramater (an integer that defaults to 0 if not passed in otherwise as a parameter) and adds 25 to it to create a range with a length of 25 to add 25 items at a time to the database. Loops through the items in the list passed in as a parameter (data) to add items to the database.'''
+    #cur.execute('DROP TABLE IF EXISTS UKSpotify')
     cur.execute('CREATE TABLE IF NOT EXISTS UKSpotify (id INTEGER PRIMARY KEY, song_name TEXT UNIQUE, genre_id INTEGER)')
     conn.commit()
     r = offset + 25
@@ -108,21 +111,26 @@ def getUKGenreCounts(cur):
     return l
     pass
 
-def createPieChart(data, country):
+def createPieChart(data, title):
     ''''''
+    data = sorted(data, reverse=True)
+    no_zeros = [i for i in data if i[0] != 0]
+    zeros = ', '.join([i[1] for i in data if i[0] == 0])
     labels = []
     sizes = []
     total = 0
-    for tup in data:
+    for tup in no_zeros:
         labels.append(tup[1])
         total += tup[0]
-    for tup in data:
+    for tup in no_zeros:
         size = (tup[0]/total) * 360
         sizes.append(size)
     colors = ['green', 'orange', 'blue', 'red', 'yellow', 'pink', 'purple', 'gray', 'lightskyblue', 'lightcoral', 'yellowgreen']
-    plt.pie(sizes, labels=labels, colors=colors)
+    plt.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', pctdistance=0.75)
     plt.axis('equal')
-    plt.title(country)
+    plt.title(title)
+    footnote = f'Genres with no songs in the top 50 this week: {zeros}'
+    plt.annotate(footnote, xy=(0,0), xycoords='axes fraction')
     #plt.tight_layout()
     plt.show()
     pass
@@ -166,8 +174,10 @@ def main():
     uk_genres = getUKGenreCounts(cur)
 
     #CREATE PIE CHARTS SHOWING PROPORTIONS OF EACH GENRE BY NUMBER OF SONGS
-    createPieChart(canada_genres, 'Canada')
-    #createPieChart(uk_genres)
+    canada_title = 'Proportion of Genres of Top 50 Most Popular Songs in Canada on Spotify This Week'
+    createPieChart(canada_genres, canada_title)
+    uk_title = 'Proportion of Genres of Top 50 Most Popular Songs in the UK on Spotify This Week'
+    #createPieChart(uk_genres, uk_title)
     pass
 
 
