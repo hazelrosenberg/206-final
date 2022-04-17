@@ -7,6 +7,7 @@ import unittest
 import csv
 import matplotlib.pyplot as plt
 from  bs4 import BeautifulSoup
+from textwrap import wrap
 #from tabulate import tabulate #dont forget pip install tabulate
 import pprint
 import spotipy
@@ -125,12 +126,13 @@ def createPieChart(data, title):
     for tup in no_zeros:
         size = (tup[0]/total) * 360
         sizes.append(size)
-    colors = ['green', 'orange', 'blue', 'red', 'yellow', 'pink', 'purple', 'gray', 'lightskyblue', 'lightcoral', 'yellowgreen']
-    plt.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', pctdistance=0.75)
+    colors = ['#e6ff00', '#1b96c6', '#ff952a', '#61ff68', '#e258c3', '#71f7ff', '#8682e6', '#ff646a', '#00b5af', '#ffe65b', '#5dc480']
+    plt.figure(figsize=(7,7))
+    plt.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', pctdistance=0.85, textprops={'fontsize': 12})
     plt.axis('equal')
-    plt.title(title)
+    plt.title('\n'.join(wrap(title,60)), fontsize=14, fontweight='bold')
     footnote = f'Genres with no songs in the top 50 this week: {zeros}'
-    plt.annotate(footnote, xy=(0,0), xycoords='axes fraction')
+    plt.annotate(footnote, xy=(-0.1,-0.1), xycoords='axes fraction', fontsize=9)
     #plt.tight_layout()
     plt.show()
     pass
@@ -177,7 +179,7 @@ def main():
     canada_title = 'Proportion of Genres of Top 50 Most Popular Songs in Canada on Spotify This Week'
     createPieChart(canada_genres, canada_title)
     uk_title = 'Proportion of Genres of Top 50 Most Popular Songs in the UK on Spotify This Week'
-    #createPieChart(uk_genres, uk_title)
+    createPieChart(uk_genres, uk_title)
     pass
 
 
