@@ -28,7 +28,6 @@ def createSpotipyObject(cid, secret):
 
 def createGenresTable(genres, cur, conn):
     '''Creates genres table in the database with a given list of genres, database connection, and cursor.'''
-    #cur.execute('DROP TABLE IF EXISTS Genres')
     cur.execute('CREATE TABLE IF NOT EXISTS Genres (id INTEGER PRIMARY KEY, genre TEXT UNIQUE)')
     for i in range(len(genres)):
         cur.execute('INSERT OR IGNORE INTO Genres (id,genre) VALUES (?,?)', (i, genres[i]))
@@ -68,7 +67,6 @@ def getPlaylistData(pid, sp, cur):
 
 def createCanadaTable(data, cur, conn, offset=0):
     '''Creates CanadaSpotify table in the database (music.db), if it doesn't already exist, with the cursor and connection objects passed in as parameters. Takes the offset paramater (an integer that defaults to 0 if not passed in otherwise as a parameter) and adds 25 to it to create a range with a length of 25 to add 25 items at a time to the database. Loops through the items in the list passed in as a parameter (data) to add items to the database.'''
-    #cur.execute('DROP TABLE IF EXISTS CanadaSpotify')
     cur.execute('CREATE TABLE IF NOT EXISTS CanadaSpotify (id INTEGER PRIMARY KEY, song_name TEXT UNIQUE, genre_id INTEGER)')
     conn.commit()
     r = offset + 25
@@ -78,15 +76,14 @@ def createCanadaTable(data, cur, conn, offset=0):
         conn.commit()    
     pass
 
-def createUKTable(data, cur, conn, offset=0):
-    '''Creates UKSpotify table in the database (music.db), if it doesn't already exist, with the cursor and connection objects passed in as parameters. Takes the offset paramater (an integer that defaults to 0 if not passed in otherwise as a parameter) and adds 25 to it to create a range with a length of 25 to add 25 items at a time to the database. Loops through the items in the list passed in as a parameter (data) to add items to the database.'''
-    #cur.execute('DROP TABLE IF EXISTS UKSpotify')
-    cur.execute('CREATE TABLE IF NOT EXISTS UKSpotify (id INTEGER PRIMARY KEY, song_name TEXT UNIQUE, genre_id INTEGER)')
+def createUSATable(data, cur, conn, offset=0):
+    '''Creates USASpotify table in the database (music.db), if it doesn't already exist, with the cursor and connection objects passed in as parameters. Takes the offset paramater (an integer that defaults to 0 if not passed in otherwise as a parameter) and adds 25 to it to create a range with a length of 25 to add 25 items at a time to the database. Loops through the items in the list passed in as a parameter (data) to add items to the database.'''
+    cur.execute('CREATE TABLE IF NOT EXISTS USASpotify (id INTEGER PRIMARY KEY, song_name TEXT UNIQUE, genre_id INTEGER)')
     conn.commit()
     r = offset + 25
     for i in range(offset, r):
         song_info = data[i]
-        cur.execute('INSERT OR IGNORE INTO UKSpotify (id,song_name,genre_id) VALUES (?,?,?)', (i, song_info[0], song_info[1]))
+        cur.execute('INSERT OR IGNORE INTO USASpotify (id,song_name,genre_id) VALUES (?,?,?)', (i, song_info[0], song_info[1]))
         conn.commit()
     pass
 
@@ -101,13 +98,13 @@ def getCanadaGenreCounts(cur):
     return l
     pass
 
-def getUKGenreCounts(cur):
-    '''Uses the cursor object to select all the genres from the Genres table in the database (music.db), and then selects the count of how many songs of each genre are in the UKSpotify table by joining the Genres and UKSpotify tables on the genre ids. Returns the count and name of each genre as a tuple in a list of tuples.'''
+def getUSAGenreCounts(cur):
+    '''Uses the cursor object to select all the genres from the Genres table in the database (music.db), and then selects the count of how many songs of each genre are in the USASpotify table by joining the Genres and USASpotify tables on the genre ids. Returns the count and name of each genre as a tuple in a list of tuples.'''
     l = []
     cur.execute('SELECT genre FROM Genres')
     x = cur.fetchall()
     for item in x:
-        cur.execute('SELECT COUNT(genre_id) FROM UKSpotify JOIN Genres ON UKSpotify.genre_id = Genres.id WHERE Genres.genre = ?', (item[0], ))
+        cur.execute('SELECT COUNT(genre_id) FROM USASpotify JOIN Genres ON USASpotify.genre_id = Genres.id WHERE Genres.genre = ?', (item[0], ))
         l.append((cur.fetchone()[0], item[0]))
     return l
     pass
@@ -155,9 +152,9 @@ def main():
     canada_pid = "37i9dQZEVXbMda2apknTqH"
     canada_data = getPlaylistData(canada_pid, sp, cur)
 
-    #COLLECT UK TOP 50 SONGS INFO
-    uk_pid = '37i9dQZEVXbMwmF30ppw50'
-    uk_data = getPlaylistData(uk_pid, sp, cur)
+    #COLLECT USA TOP 50 SONGS INFO
+    usa_pid = '37i9dQZEVXbLp5XoPON0wI'
+    usa_data = getPlaylistData(usa_pid, sp, cur)
 
     #CREATE TABLE IN DATABASE AND ADD DATA 25 ITEMS AT A TIME (RUN CODE TWICE)
     try:
@@ -166,20 +163,20 @@ def main():
     except:
         createCanadaTable(canada_data, cur, conn)
     try:
-        cur.execute('SELECT * FROM UKSpotify')
-        createUKTable(uk_data, cur, conn, 25)
+        cur.execute('SELECT * FROM USASpotify')
+        createUSATable(usa_data, cur, conn, 25)
     except:
-        createUKTable(uk_data, cur, conn)
+        createUSATable(usa_data, cur, conn)
 
     #GET GENRE COUNTS FROM DATABASE
     canada_genres = getCanadaGenreCounts(cur)
-    uk_genres = getUKGenreCounts(cur)
+    usa_genres = getUSAGenreCounts(cur)
 
     #CREATE PIE CHARTS SHOWING PROPORTIONS OF EACH GENRE BY NUMBER OF SONGS
     canada_title = 'Proportion of Genres of Top 50 Most Popular Songs in Canada on Spotify This Week'
     createPieChart(canada_genres, canada_title)
-    uk_title = 'Proportion of Genres of Top 50 Most Popular Songs in the UK on Spotify This Week'
-    createPieChart(uk_genres, uk_title)
+    usa_title = 'Proportion of Genres of Top 50 Most Popular Songs in the USA on Spotify This Week'
+    createPieChart(usa_genres, usa_title)
     pass
 
 
