@@ -1,3 +1,4 @@
+from nbformat import write
 import requests
 import sqlite3
 import json
@@ -116,6 +117,16 @@ def getUSAGenreCounts(cur):
     return l
     pass
 
+def writeCalculatedDataToFile(data, filename):
+    ''''''
+    dir = os.path.dirname(__file__)
+    outFile = open(os.path.join(dir, filename), 'w')
+    outFile.write('Genre,Number of Songs')
+    for item in data:
+        outFile.write('\n'+item[1]+','+str(item[0]))
+    outFile.close()
+    pass
+
 def createPieChart(data, title):
     ''''''
     data = sorted(data, reverse=True)
@@ -147,8 +158,8 @@ def main():
     cur, conn = setUpDatabase('music.db')
 
     #SETS UP SPOTIPY
-    file = 'secrets.txt'
-    sp = createSpotipyObject(file)
+    secrets_file = 'secrets.txt'
+    sp = createSpotipyObject(secrets_file)
 
     #CREATES GENRES TABLE
     genres = ['Rock', 'Pop', 'Hip Hop', 'Rap', 'R&B', 'Country', 'Alt', 'Classical', 'EDM', 'Jazz', 'Other']
@@ -178,11 +189,17 @@ def main():
     canada_genres = getCanadaGenreCounts(cur)
     usa_genres = getUSAGenreCounts(cur)
 
+    #WRITE CALCULATED DATA TO TEXT FILES
+    c_title = 'spotifyCalculationsCanada.txt'
+    writeCalculatedDataToFile(canada_genres, c_title)
+    u_title = 'spotifyCalculationsUSA.txt'
+    writeCalculatedDataToFile(usa_genres, u_title)
+
     #CREATE PIE CHARTS SHOWING PROPORTIONS OF EACH GENRE BY NUMBER OF SONGS
     canada_title = 'Proportion of Genres of Top 50 Most Popular Songs in Canada on Spotify This Week'
-    createPieChart(canada_genres, canada_title)
+    #createPieChart(canada_genres, canada_title)
     usa_title = 'Proportion of Genres of Top 50 Most Popular Songs in the USA on Spotify This Week'
-    createPieChart(usa_genres, usa_title)
+    #createPieChart(usa_genres, usa_title)
     pass
 
 

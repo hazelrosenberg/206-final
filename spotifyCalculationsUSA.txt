@@ -1,0 +1,12 @@
+Genre,Number of Songs
+Rock,4
+Pop,19
+Hip Hop,12
+Rap,3
+R&B,1
+Country,1
+Alt,2
+Classical,0
+EDM,0
+Jazz,0
+Other,8
