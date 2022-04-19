@@ -20,8 +20,15 @@ def setUpDatabase(db_name):
     cur = conn.cursor()
     return cur, conn
 
-def createSpotipyObject(cid, secret):
-    '''Creates spotipy object with client id and client secret.'''
+def createSpotipyObject(filename):
+    '''Reads in text file and creates spotipy object with client id and client secret (stored in text file).'''
+    source_dir = os.path.dirname(os.path.abspath(__file__))
+    full_path = os.path.join(source_dir, filename)
+    infile = open(full_path,'r', encoding='utf-8')
+    lines = infile.readlines()
+    infile.close()
+    cid = lines[0]
+    secret = lines[1]
     client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
     sp = spotipy.Spotify(client_credentials_manager = client_credentials_manager)
     return sp
@@ -140,9 +147,8 @@ def main():
     cur, conn = setUpDatabase('music.db')
 
     #SETS UP SPOTIPY
-    cid = 'c2b8ee04a2a045a9bb74e3c7c3451b0a'
-    secret = 'c82da9cec8804c83b96ffb0679ad280a'
-    sp = createSpotipyObject(cid, secret)
+    file = 'secrets.txt'
+    sp = createSpotipyObject(file)
 
     #CREATES GENRES TABLE
     genres = ['Rock', 'Pop', 'Hip Hop', 'Rap', 'R&B', 'Country', 'Alt', 'Classical', 'EDM', 'Jazz', 'Other']
