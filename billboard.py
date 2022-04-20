@@ -2,8 +2,15 @@ import requests
 import sqlite3
 import matplotlib.pyplot as plt
 from bs4 import BeautifulSoup
+import os
 
 
+def setUpDatabase(db_name):
+    '''Sets up the database with the provided name (db_name).'''
+    path = os.path.dirname(os.path.abspath(__file__))
+    conn  = sqlite3.connect(path+'/'+db_name)
+    cur = conn.cursor()
+    return cur, conn
 
 def billboard_100canada(): #are we doing usa
     song_titlesca = []
@@ -81,12 +88,13 @@ def create_usabb_table(data, cur, conn, offset=0):
     r = offset +  25
     for i in range(offset, r):
         song_info = data[i]
-        cur.execute('INSERT OR IGNORE INTO UsaBBTable (id, bbsong_nameusa, bbartist_nameusa) VALUES (?,?,?)' (i, song_info[0], song_info[1]))
+        cur.execute('INSERT OR IGNORE INTO UsaBBTable (id, bbsong_nameusa, bbartist_nameusa) VALUES (?,?,?)', (i, song_info[0], song_info[1]))
         conn.commit()
     pass
 
 
 def bsDatabase():
+    cur, conn = setUpDatabase('bbmusic.db')
     #CREATE DATABASE USING INSERT 
     '''conn = sqlite3.connect('your_database.sqlite3', check_same_thread=False)  #make a database in sqlite3 first?
     curs = conn.cursor()
