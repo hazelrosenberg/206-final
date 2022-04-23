@@ -29,7 +29,7 @@ def createSpotipyObject(filename):
     infile = open(full_path,'r', encoding='utf-8')
     lines = infile.readlines()
     infile.close()
-    cid = lines[0]
+    cid = lines[0].strip()
     secret = lines[1]
     client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
     sp = spotipy.Spotify(client_credentials_manager = client_credentials_manager)
@@ -169,7 +169,7 @@ def main():
     secrets_file = 'secrets.txt'
     sp = createSpotipyObject(secrets_file)
 
-    #CREATES GENRES TABLE
+    #CREATES GENRES TABLE (IF IT DOESN'T ALREADY EXIST)
     genres = ['Rock', 'Pop', 'Hip Hop', 'Rap', 'R&B', 'Country', 'Alt', 'Classical', 'EDM', 'Jazz', 'Other']
     createGenresTable(genres, cur, conn)
 

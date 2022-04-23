@@ -28,6 +28,14 @@ def createSpotipyObject(filename):
     return sp
     pass
 
+def createGenresTable(genres, cur, conn):
+    '''Creates genres table in the database with a given list of genres, database connection, and cursor.'''
+    cur.execute('CREATE TABLE IF NOT EXISTS Genres (id INTEGER PRIMARY KEY, genre TEXT UNIQUE)')
+    for i in range(len(genres)):
+        cur.execute('INSERT OR IGNORE INTO Genres (id,genre) VALUES (?,?)', (i, genres[i]))
+    conn.commit()
+    pass
+
 def getTopChartsData(url, sp, cur):
     ''''''
     cur.execute('SELECT genre FROM Genres')
@@ -92,6 +100,10 @@ def main():
     #SETS UP SPOTIPY (TO USE IN CONJUNCTION WITH BEAUTIFUL SOUP)
     secrets_file = 'secrets.txt'
     sp = createSpotipyObject(secrets_file)
+
+    #CREATES GENRES TABLE (IF IT DOESN'T ALREADY EXIST)
+    genres = ['Rock', 'Pop', 'Hip Hop', 'Rap', 'R&B', 'Country', 'Alt', 'Classical', 'EDM', 'Jazz', 'Other']
+    createGenresTable(genres, cur, conn)
 
     #COLLECT USA TOP SONGS INFO USING BEAUTIFUL SOUP AND SPOTIPY OBJECT
     usa_url = 'https://kworb.net/charts/apple_s/us.html'
