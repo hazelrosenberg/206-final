@@ -160,6 +160,7 @@ def createPieChart(data, title):
     plt.show()
     pass
 
+
 def main():
     ''''''
     #SETS UP THE DATABASE
