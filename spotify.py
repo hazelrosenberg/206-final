@@ -206,17 +206,11 @@ def main():
 
     #CREATE PIE CHARTS SHOWING PROPORTIONS OF EACH GENRE BY NUMBER OF SONGS
     canada_title = 'Proportion of Genres of Top 50 Most Popular Songs in Canada on Spotify This Week'
-    #createPieChart(canada_genres, canada_title)
+    createPieChart(canada_genres, canada_title)
     usa_title = 'Proportion of Genres of Top 50 Most Popular Songs in the USA on Spotify This Week'
-    #createPieChart(usa_genres, usa_title)
+    createPieChart(usa_genres, usa_title)
     pass
 
 
 if __name__ == '__main__':
     main()
-
-
-#token = spotipy.oauth2.SpotifyClientCredentials(client_id='c2b8ee04a2a045a9bb74e3c7c3451b0a', client_secret='c82da9cec8804c83b96ffb0679ad280a')
-
-#cache_token = token.get_access_token()
-#sp = spotipy.Spotify(cache_token) 
