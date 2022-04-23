@@ -118,7 +118,7 @@ def getUSAGenreCounts(cur):
     pass
 
 def writeCalculatedDataToFile(data, filename):
-    ''''''
+    '''Accepts list of tuples for a playlist that include each genre and the number of songs of that genre in the playlist (data), and a file name to write the calculations to (filename). Creates the file in the directory, named after the filename parameter. Performs calculations and writes them to the file, then closes the file.'''
     dir = os.path.dirname(__file__)
     outFile = open(os.path.join(dir, filename), 'w')
     total = 0
@@ -134,7 +134,7 @@ def writeCalculatedDataToFile(data, filename):
     pass
 
 def createPieChart(data, title):
-    ''''''
+    '''Accepts a list of tuples for a playlist that include each genre and the number of songs of that genre in the playlist (data), and a title for the pie chart (title). Omits genres with 0 songs in the playlist from being included in the pie chart and makes a footnote of which genres had no songs. Creates a pie chart with the genres that had more than 0 songs.'''
     data = sorted(data, reverse=True)
     no_zeros = [i for i in data if i[0] != 0]
     zeros = ', '.join([i[1] for i in data if i[0] == 0])
@@ -203,9 +203,9 @@ def main():
 
     #CREATE PIE CHARTS SHOWING PROPORTIONS OF EACH GENRE BY NUMBER OF SONGS
     canada_title = 'Proportion of Genres of Top 50 Most Popular Songs in Canada on Spotify This Week'
-    createPieChart(canada_genres, canada_title)
+    #createPieChart(canada_genres, canada_title)
     usa_title = 'Proportion of Genres of Top 50 Most Popular Songs in the USA on Spotify This Week'
-    createPieChart(usa_genres, usa_title)
+    #createPieChart(usa_genres, usa_title)
     pass
 
 
