@@ -1,12 +1,14 @@
-Genre,Number of Songs
-Rock,4
-Pop,19
-Hip Hop,12
-Rap,3
-R&B,1
-Country,1
-Alt,2
-Classical,0
-EDM,0
-Jazz,0
-Other,8
+Genre,Number of Songs,Percent of Total
+Rock,4,8%
+Pop,19,38%
+Hip Hop,12,24%
+Rap,3,6%
+R&B,1,2%
+Country,1,2%
+Alt,2,4%
+Classical,0,0%
+EDM,0,0%
+Jazz,0,0%
+Other,8,16%
+
+Total Number of Songs: 50
