@@ -20,9 +20,10 @@ def setUpDatabase(db_name):
     conn  = sqlite3.connect(path+'/'+db_name)
     cur = conn.cursor()
     return cur, conn
+    pass
 
 def createSpotipyObject(filename):
-    '''Reads in text file and creates spotipy object with client id and client secret (stored in text file).'''
+    '''Reads in text file (filename) and creates spotipy object with client id and client secret (stored in text file).'''
     source_dir = os.path.dirname(os.path.abspath(__file__))
     full_path = os.path.join(source_dir, filename)
     infile = open(full_path,'r', encoding='utf-8')
@@ -33,6 +34,7 @@ def createSpotipyObject(filename):
     client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
     sp = spotipy.Spotify(client_credentials_manager = client_credentials_manager)
     return sp
+    pass
 
 def createGenresTable(genres, cur, conn):
     '''Creates genres table in the database with a given list of genres, database connection, and cursor.'''
