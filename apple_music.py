@@ -21,15 +21,19 @@ def createSpotipyObject(filename):
     infile = open(full_path,'r', encoding='utf-8')
     lines = infile.readlines()
     infile.close()
-    cid = lines[0]
+    cid = lines[0].strip()
     secret = lines[1]
     client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
     sp = spotipy.Spotify(client_credentials_manager = client_credentials_manager)
     return sp
     pass
 
-def getTopChartsData(url, sp):
+def getTopChartsData(url, sp, cur):
     ''''''
+    cur.execute('SELECT genre FROM Genres')
+    genres = []
+    for item in cur:
+        genres.append(item[0])
     r = requests.get(url)
     soup = BeautifulSoup(r.content, 'html.parser')
     tags = soup.find_all('td', class_='mp text')
@@ -39,10 +43,45 @@ def getTopChartsData(url, sp):
         info = info.split(' - ')
         song_name = info[1]
         artist = info[0]
-        genre = sp.search(q=artist, limit=1, offset=0, type='artist', market=None)
-        print(genre)
-        collect_info.append((song_name, artist))
+        artist_info = sp.search(q=artist, limit=1, offset=0, type='artist', market=None)
+        try:
+            song_genre = artist_info['artists']['items'][0]['genres'][0]
+            for g in genres:
+                if g.lower() in song_genre:
+                    song_genre = g
+                    break
+                else:
+                    continue
+            if song_genre not in genres:
+                song_genre = 'Other'
+        except:
+            song_genre = 'Other'
+        cur.execute('SELECT id FROM Genres WHERE genre=?', (song_genre, ))
+        song_genre_id = cur.fetchone()[0]
+        collect_info.append((song_name, song_genre_id))
     return collect_info[:50]
+    pass
+
+def createUSATable(data, cur, conn, offset=0):
+    '''Creates USAAppleMusic table in the database (music.db), if it doesn't already exist, with the cursor and connection objects passed in as parameters. Takes the offset paramater (an integer that defaults to 0 if not passed in otherwise as a parameter) and adds 25 to it to create a range with a length of 25 to add 25 items at a time to the database. Loops through the items in the list passed in as a parameter (data) to add items to the database.'''
+    cur.execute('CREATE TABLE IF NOT EXISTS USAAppleMusic (id INTEGER PRIMARY KEY, song_name TEXT UNIQUE, genre_id INTEGER)')
+    conn.commit()
+    r = offset + 25
+    for i in range(offset, r):
+        song_info = data[i]
+        cur.execute('INSERT OR IGNORE INTO USAAppleMusic (id,song_name,genre_id) VALUES (?,?,?)', (i, song_info[0], song_info[1]))
+        conn.commit()    
+    pass
+
+def createCanadaTable(data, cur, conn, offset=0):
+    '''Creates CanadaAppleMusic table in the database (music.db), if it doesn't already exist, with the cursor and connection objects passed in as parameters. Takes the offset paramater (an integer that defaults to 0 if not passed in otherwise as a parameter) and adds 25 to it to create a range with a length of 25 to add 25 items at a time to the database. Loops through the items in the list passed in as a parameter (data) to add items to the database.'''
+    cur.execute('CREATE TABLE IF NOT EXISTS CanadaAppleMusic (id INTEGER PRIMARY KEY, song_name TEXT UNIQUE, genre_id INTEGER)')
+    conn.commit()
+    r = offset + 25
+    for i in range(offset, r):
+        song_info = data[i]
+        cur.execute('INSERT OR IGNORE INTO CanadaAppleMusic (id,song_name,genre_id) VALUES (?,?,?)', (i, song_info[0], song_info[1]))
+        conn.commit()    
     pass
 
 
@@ -54,12 +93,25 @@ def main():
     secrets_file = 'secrets.txt'
     sp = createSpotipyObject(secrets_file)
 
-    #COLLECT USA TOP SONGS INFO USING BEAUTIFUL SOUP
+    #COLLECT USA TOP SONGS INFO USING BEAUTIFUL SOUP AND SPOTIPY OBJECT
     usa_url = 'https://kworb.net/charts/apple_s/us.html'
-    getTopChartsData(usa_url, sp)
-    #usa_data = getTopChartsData(usa_url, sp)
-    #print(usa_data)
-    #print(len(usa_data))
+    usa_data = getTopChartsData(usa_url, sp, cur)
+
+    #COLLECT CANADA TOP SONGS INFO USING BEAUTIFUL SOUP AND SPOTIPY OBJECT
+    canada_url = 'https://kworb.net/charts/apple_s/ca.html'
+    canada_data = getTopChartsData(canada_url, sp, cur)
+
+    #CREATE TABLES IN DATABASE AND ADD DATA 25 ITEMS AT A TIME (RUN CODE TWICE)
+    try:
+        cur.execute('SELECT * FROM USAAppleMusic')
+        createUSATable(usa_data, cur, conn, 25)
+    except:
+        createUSATable(usa_data, cur, conn)
+    try:
+        cur.execute('SELECT * FROM CanadaAppleMusic')
+        createCanadaTable(canada_data, cur, conn, 25)
+    except:
+        createCanadaTable(canada_data, cur, conn)
 
 
 if __name__ == '__main__':
