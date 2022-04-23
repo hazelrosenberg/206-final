@@ -39,7 +39,7 @@ def createGenresTable(genres, cur, conn):
     pass
 
 def getTopChartsData(url, sp, cur):
-    ''''''
+    '''Uses beautiful soup to scrape a website and gather data for the apple music top charts. Uses spotipy object to use the scraped data to determine the genre for each song. Uses a database cursor object to assign a genre_id to each song based of the song's genre from Spotify and the genres in the music.db table. Returns a list of tuples with (song_name, genre_id).'''
     cur.execute('SELECT genre FROM Genres')
     genres = []
     for item in cur:
