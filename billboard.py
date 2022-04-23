@@ -3,6 +3,15 @@ import sqlite3
 from bs4 import BeautifulSoup
 import pandas as pd
 import mysql.connector
+import mysqlite3
+import os
+
+def setUpDatabase(db_name):
+    '''Sets up the database with the provided name (db_name).'''
+    path = os.path.dirname(os.path.abspath(__file__))
+    conn  = sqlite3.connect(path+'/'+db_name)
+    cur = conn.cursor()
+    return cur, conn
 #from cottage inn example in runestone for apple music usa charts
 url = 'https://kworb.net/charts/apple_s/us.html'   
 r = requests.get(url)
@@ -40,10 +49,17 @@ data_frame = pd.DataFrame(usa_dictionary)
 to_csv =  data_frame.to_csv('/Users/sydneysella/billboard_usa_data.csv')
 
 #UNCOMMENT AND THIS WILL SAVE ALL TO A DATABASE
-'''db = mysql.connector.connect(user = 'hazels user name for the database', database = 'music')
+'''db = mysql.connector.connect(database = 'music')
 cursor = db.cursor()'''
 #insert and stuff, watch rest of video after database stuff is sorted
+def main():
+    #sets up database
+    cur, conn = setUpDatabase('music.db')
+    
+   
 
+if __name__ == '__main__':
+    main()
 
 
 
@@ -158,7 +174,7 @@ def add_genres(db_filename):
 
 def main():
     #sets up database
-    cur, conn = setUpDatabase('bbmusic.db')
+    cur, conn = setUpDatabase('music.db')
     
    
 
