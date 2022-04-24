@@ -16,7 +16,7 @@ def setUpDatabase(db_name):
     pass
 
 def createSpotipyObject(filename):
-    '''Reads in text file (filename) and creates spotipy object with client id and client secret (stored in text file).'''
+    '''Reads in text file with provided file name (filename) and creates spotipy object with client id and client secret (stored in text file).'''
     source_dir = os.path.dirname(os.path.abspath(__file__))
     full_path = os.path.join(source_dir, filename)
     infile = open(full_path,'r', encoding='utf-8')
@@ -29,35 +29,15 @@ def createSpotipyObject(filename):
     return sp
     pass
 
-def createGenresTable(genres, cur, conn):
-    '''Creates genres table in the database with a given list of genres, database connection, and cursor.'''
-    cur.execute('CREATE TABLE IF NOT EXISTS Genres (id INTEGER PRIMARY KEY, genre TEXT UNIQUE)')
-    for i in range(len(genres)):
-        cur.execute('INSERT OR IGNORE INTO Genres (id,genre) VALUES (?,?)', (i, genres[i]))
-    conn.commit()
-    pass
-
-def createCountriesTable(countries, cur, conn):
+def getPlaylistData(pid, sp):
     ''''''
-    cur.execute('CREATE TABLE IF NOT EXISTS Countries (id INTEGER PRIMARY KEY, country TEXT UNIQUE)')
-    for i in range(len(countries)): 
-        cur.execute('INSERT OR IGNORE INTO Countries (id,country) VALUES (?,?)', (i, countries[i]))
-    conn.commit()
-    pass
-
-def getPlaylistData(pid, sp, cur):
-    '''Collects information for each track in a playlist (specified by playlist id parameter), including the name of the song and the genre of the song's artist, using spotipy object (sp) passed in as a parameter. Uses cursor to select genre names and ids from the database (music.db) to standardize the genres found with the spotipy object. Returns list of tuples containing the song name, and genre id for each track in the playlist.'''
     p_info = sp.playlist(pid)
     descrip = p_info['description']
     country = re.findall(' ([A-Za-z]+).', descrip)[5]
-    cur.execute('SELECT genre FROM Genres')
-    genres = []
-    for item in cur:
-        genres.append(item[0])
     playlist_songs = sp.playlist_items(pid)
     playlist_songs_info = []
     for song in playlist_songs['items']:
-        song_name = song['track']['name'] #for DB
+        song_name = song['track']['name']
         artist_id = song['track']['artists'][0]['id']
         artist_info = sp.artist(artist_id)
         song_genres = artist_info['genres']
@@ -65,21 +45,60 @@ def getPlaylistData(pid, sp, cur):
             song_genre = song_genres[0]
         else:
             song_genre = 'Other'
-        for g in genres:
-            if g.lower() in song_genre:
-                song_genre = g
-                break
-            else:
-                continue
-        if song_genre not in genres:
-            song_genre = 'Other'
         playlist_songs_info.append((song_name, song_genre, country))
     return playlist_songs_info
     pass
 
+def createGenresTable(genres, cur, conn):
+    '''Creates Genres table in the database with a given list of genres, database connection, and cursor.'''
+    cur.execute('CREATE TABLE IF NOT EXISTS Genres (id INTEGER PRIMARY KEY, genre TEXT UNIQUE)')
+    for i in range(len(genres)):
+        cur.execute('INSERT OR IGNORE INTO Genres (id,genre) VALUES (?,?)', (i, genres[i]))
+    conn.commit()
+    pass
+
+def createSpotifyGenresTable(cur, conn):
+    ''''''
+    cur.execute('CREATE TABLE IF NOT EXISTS SpotifyGenres (id INTEGER PRIMARY KEY, specific_genre TEXT UNIQUE, broad_genre_id INTEGER)')
+    conn.commit()
+    pass
+
+def createCountriesTable(countries, cur, conn):
+    '''Creates Countries table in the database with a given list of countries, database connection, and cursor.'''
+    cur.execute('CREATE TABLE IF NOT EXISTS Countries (id INTEGER PRIMARY KEY, country TEXT UNIQUE)')
+    for i in range(len(countries)): 
+        cur.execute('INSERT OR IGNORE INTO Countries (id,country) VALUES (?,?)', (i, countries[i]))
+    conn.commit()
+    pass
+
 def createSpotifyTable(cur, conn):
     ''''''
-    cur.execute('CREATE TABLE IF NOT EXISTS Spotify (id INTEGER PRIMARY KEY, song_name TEXT, genre_id INTEGER, country_id INTEGER)')
+    cur.execute('CREATE TABLE IF NOT EXISTS Spotify (id INTEGER PRIMARY KEY, song_name TEXT, specific_genre_id INTEGER, broad_genre_id INTEGER, country_id INTEGER)')
+    conn.commit()
+    pass
+
+def storeGenresData(data, cur, conn, offset):
+    ''''''
+    broad_genres = []
+    cur.execute('SELECT genre FROM Genres')
+    for item in cur:
+        broad_genres.append(item[0])
+    r = offset + 25
+    for i in range(offset, r):
+        song_info = data[i]
+        specific_genre = song_info[1]
+        for genre in broad_genres:
+            if genre.lower() in specific_genre:
+                broad_genre = genre
+                break
+            else:
+                broad_genre = ''
+                continue
+        if broad_genre not in broad_genres:
+                broad_genre = "Other"
+        cur.execute('SELECT id FROM Genres WHERE genre=?', (broad_genre, ))
+        broad_genre_id = cur.fetchall()[0][0]
+        cur.execute('INSERT OR IGNORE INTO SpotifyGenres (id,specific_genre,broad_genre_id) VALUES (?,?,?)', (i, specific_genre, broad_genre_id))
     conn.commit()
     pass
 
@@ -88,11 +107,13 @@ def storeData(data, cur, conn, offset):
     r = offset + 25
     for i in range(offset, r):
         song_info = data[i]
-        cur.execute('SELECT id FROM Genres WHERE genre=?', (song_info[1], ))
-        song_genre_id = cur.fetchall()[0][0]
+        cur.execute('SELECT id FROM SpotifyGenres WHERE specific_genre=?', (song_info[1], ))
+        specific_genre_id = cur.fetchall()[0][0]
+        cur.execute('SELECT Genres.id FROM Genres JOIN SpotifyGenres ON Genres.id = SpotifyGenres.broad_genre_id WHERE SpotifyGenres.specific_genre=?', (song_info[1], ))
+        broad_song_genre_id = cur.fetchall()[0][0]
         cur.execute('SELECT id FROM Countries WHERE country=?', (song_info[2], ))
         song_country_id = cur.fetchall()[0][0]
-        cur.execute('INSERT OR IGNORE INTO Spotify (id, song_name, genre_id, country_id) VALUES (?,?,?,?)', (i, song_info[0], song_genre_id, song_country_id))
+        cur.execute('INSERT OR IGNORE INTO Spotify (id, song_name, specific_genre_id, broad_genre_id, country_id) VALUES (?,?,?,?,?)', (i, song_info[0], specific_genre_id, broad_song_genre_id, song_country_id))
         conn.commit()
     pass
 
@@ -182,39 +203,51 @@ def main():
     genres = ['Rock', 'Pop', 'Hip Hop', 'Rap', 'R&B', 'Country', 'Alt', 'Classical', 'EDM', 'Jazz', 'Other']
     createGenresTable(genres, cur, conn)
 
+    #CREATE SPOTIFY GENRES TABLE (IF IT DOESN'T ALREADY EXIST)
+    createSpotifyGenresTable(cur, conn)
+
     #CREATES COUNRIES TABLE (IF IT DOESN'T ALREADY EXIST)
     countries = ['Canada', 'USA', 'Mexico']
     createCountriesTable(countries, cur, conn)
 
     #COLLECT CANADA TOP 50 SONGS INFO
     canada_pid = "37i9dQZEVXbMda2apknTqH"
-    canada_data = getPlaylistData(canada_pid, sp, cur)
+    canada_data = getPlaylistData(canada_pid, sp)
 
     #COLLECT USA TOP 50 SONGS INFO
     usa_pid = '37i9dQZEVXbLp5XoPON0wI'
-    usa_data = getPlaylistData(usa_pid, sp, cur)
+    usa_data = getPlaylistData(usa_pid, sp)
 
     #COLLECT MEXICO TOP 50 SONGS INFO
     mexico_pid = '37i9dQZEVXbKUoIkUXteF6'
-    mexico_data = getPlaylistData(mexico_pid, sp, cur)
-
-    #CREATE SPOTIFY TABLE IN DATABASE
-    createSpotifyTable(cur, conn)
+    mexico_data = getPlaylistData(mexico_pid, sp)
 
     #COMBINE DATA FROM CANADA, MEXICO, USA INTO ONE LIST TO STORE IN DATABASE
     all_data = canada_data + usa_data + mexico_data
 
-    #ADD DATA 25 ITEMS AT A TIME (RUN CODE 6 TIMES)
-    cur.execute('SELECT * FROM Spotify')
-    num_rows = len(cur.fetchall())
-    if num_rows < len(all_data):
-        try:
-            cur.execute('SELECT id FROM Spotify WHERE id = (SELECT MAX (id) FROM Spotify)')
-            start = cur.fetchone()
-            offset = start[0] + 1
-        except:
-            offset = 0
-        storeData(all_data, cur, conn, offset)
+    #CREATE SPOTIFY TABLE IN DATABASE
+    createSpotifyTable(cur, conn)
+
+    #ADD DATA 25 ITEMS AT A TIME (RUN CODE AT LEAST 12 TIMES)
+    try:
+        cur.execute('SELECT id FROM SpotifyGenres WHERE id = (SELECT MAX (id) FROM SpotifyGenres)')
+        start = cur.fetchone()
+        offset = start[0] + 1
+    except:
+        offset = 0
+    try:
+        storeGenresData(all_data, cur, conn, offset)
+    except:
+        cur.execute('SELECT * FROM Spotify')
+        num_rows_s = len(cur.fetchall())
+        if num_rows_s < len(all_data):
+            try:
+                cur.execute('SELECT id FROM Spotify WHERE id = (SELECT MAX (id) FROM Spotify)')
+                start = cur.fetchone()
+                offset = start[0] + 1
+            except:
+                offset = 0
+            storeData(all_data, cur, conn, offset)
 
     #CREATE TABLE IN DATABASE AND ADD DATA 25 ITEMS AT A TIME (RUN CODE TWICE)
     #try:
