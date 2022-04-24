@@ -94,6 +94,18 @@ def createCanadaTable(data, cur, conn, offset=0):
         conn.commit()    
     pass
 
+def createMexicoTable(data, cur, conn, offset=0):
+    '''Creates MexicoAppleMusic table in the database (music.db), if it doesn't already exist, with the cursor and connection objects passed in as parameters. Takes the offset paramater (an integer that defaults to 0 if not passed in otherwise as a parameter) and adds 25 to it to create a range with a length of 25 to add 25 items at a time to the database. Loops through the items in the list passed in as a parameter (data) to add items to the database.'''
+    cur.execute('CREATE TABLE IF NOT EXISTS MexicoAppleMusic (id INTEGER PRIMARY KEY, song_name TEXT UNIQUE,  genre_id INTEGER)')
+    conn.commit()
+    r = offset + 25
+    for i in range(offset, r):
+        song_info = data[i]
+        cur.execute('INSERT OR IGNORE INTO MexicoAppleMusic (id, song_name, genre_id) VALUES (?,?,?)', (i, song_info[0], song_info[1]))
+        conn.commit()
+    pass
+    
+
 def getCanadaGenreCounts(cur):
     '''Uses the cursor object to select all the genres from the Genres table in the database (music.db), and then selects the count of how many songs of each genre are in the CanadaAppleMusic table by joining the Genres and CanadaAppleMusic tables on the genre ids. Returns the count and name of each genre as a tuple in a list of tuples.'''
     l = []
@@ -115,6 +127,18 @@ def getUSAGenreCounts(cur):
         l.append((cur.fetchone()[0], item[0]))
     return l
     pass
+
+def getMexicoGenreCounts(cur):
+    '''Uses the cursor object to select all the genres from the Genres table in the database (music.db), and then selects the count of how many songs of each genre are in the USAAppleMusic table by joining the Genres and USAAppleMusic tables on the genre ids. Returns the count and name of each genre as a tuple in a list of tuples.'''
+    l = []
+    cur.execute('SELECT genre FROM Genres')
+    x = cur.fetchall()
+    for item in x:
+        cur.execute('SELECT COUNT(genre_id) FROM MexicoAppleMusic JOIN Genres ON MexicoAppleMusic.genre_id = Genres.id WHERE Genres.genre = ?', (item[0], ))
+        l.append((cur.fetchone()[0], item[0]))
+    return l
+    pass
+
 
 def writeCalculatedDataToFile(data, filename):
     '''Accepts list of tuples for a playlist that include each genre and the number of songs of that genre in the playlist (data), and a file name to write the calculations to (filename). Creates the file in the directory, named after the filename parameter. Performs calculations and writes them to the file, then closes the file.'''
@@ -178,6 +202,10 @@ def main():
     canada_url = 'https://kworb.net/charts/apple_s/ca.html'
     canada_data = getTopChartsData(canada_url, sp, cur)
 
+    #COLLECT MEXICO TOP SONGS INFO USING BEAUTIFUL SOUP AND SPOTIPY OBJECT
+    mexico_url = 'https://kworb.net/charts/apple_s/mx.html'
+    mexico_data = getTopChartsData(mexico_url ,sp, cur)
+
     #CREATE TABLES IN DATABASE AND ADD DATA 25 ITEMS AT A TIME (RUN CODE TWICE)
     try:
         cur.execute('SELECT * FROM USAAppleMusic')
@@ -189,22 +217,32 @@ def main():
         createCanadaTable(canada_data, cur, conn, 25)
     except:
         createCanadaTable(canada_data, cur, conn)
+    try:
+        cur.execute('SELECT * FROM MexicoAppleMusic')
+        createMexicoTable(mexico_data, cur, conn, 25)
+    except:
+        createMexicoTable(mexico_data, cur, conn)
 
     #GET GENRE COUNTS FROM DATABASE
     canada_genres = getCanadaGenreCounts(cur)
     usa_genres = getUSAGenreCounts(cur)
+    mexico_genres = getMexicoGenreCounts(cur)
 
     #WRITE CALCULATED DATA TO TEXT FILES
     c_title = 'appleMusicCalculationsCanada.txt'
     writeCalculatedDataToFile(canada_genres, c_title)
     u_title = 'appleMusicCalculationsUSA.txt'
     writeCalculatedDataToFile(usa_genres, u_title)
+    m_title = 'appleMusicCalculationsMexico.txt'
+    writeCalculatedDataToFile(mexico_genres, m_title)
 
     #CREATE PIE CHARTS SHOWING PROPORTIONS OF EACH GENRE BY NUMBER OF SONGS
     canada_title = 'Proportion of Genres of Top 50 Most Popular Songs in Canada on Apple Music This Week'
     createPieChart(canada_genres, canada_title)
     usa_title = 'Proportion of Genres of Top 50 Most Popular Songs in the USA on Apple Music This Week'
     createPieChart(usa_genres, usa_title)
+    mexico_title = 'Proportion of Genres of Top 50 Most Popular Songs in Mexico on Apple Music This Week'
+    createPieChart(mexico_genres, mexico_title)
 
 
 if __name__ == '__main__':
