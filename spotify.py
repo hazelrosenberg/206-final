@@ -2,7 +2,6 @@ import sqlite3
 import os
 import matplotlib.pyplot as plt
 from textwrap import wrap
-from numpy import False_
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 import re
@@ -117,77 +116,66 @@ def storeData(data, cur, conn, offset):
         conn.commit()
     pass
 
-#def getCanadaGenreCounts(cur):
-    '''Uses the cursor object to select all the genres from the Genres table in the database (music.db), and then selects the count of how many songs of each genre are in the CanadaSpotify table by joining the Genres and CanadaSpotify tables on the genre ids. Returns the count and name of each genre as a tuple in a list of tuples.'''
-    #l = []
-    #cur.execute('SELECT genre FROM Genres')
-    #x = cur.fetchall()
-    #for item in x:
-        #cur.execute('SELECT COUNT(genre_id) FROM CanadaSpotify JOIN Genres ON CanadaSpotify.genre_id = Genres.id WHERE Genres.genre = ?', (item[0], ))
-        #l.append((cur.fetchone()[0], item[0]))
-    #return l
-    #pass
-
-#def getUSAGenreCounts(cur):
-    '''Uses the cursor object to select all the genres from the Genres table in the database (music.db), and then selects the count of how many songs of each genre are in the USASpotify table by joining the Genres and USASpotify tables on the genre ids. Returns the count and name of each genre as a tuple in a list of tuples.'''
-    #l = []
-    #cur.execute('SELECT genre FROM Genres')
-    #x = cur.fetchall()
-    #for item in x:
-        #cur.execute('SELECT COUNT(genre_id) FROM USASpotify JOIN Genres ON USASpotify.genre_id = Genres.id WHERE Genres.genre = ?', (item[0], ))
-        #l.append((cur.fetchone()[0], item[0]))
-    #return l
-    #pass
-
-#def getMexicoGenreCounts(cur):
+def getGenreCounts(country, cur):
     '''Uses the cursor object to select all the genres from the Genres table in the database (music.db), and then selects the count of how many songs of each genre are in the USASpotify table by joining the Genres and MexicoSpotify tables on the genre ids. Returns the count and name of each genre as a tuple in a list of tuples.'''
-    #l = []
-    #cur.execute('SELECT genre FROM Genres')
-    #x = cur.fetchall()
-    #for item in x:
-        #cur.execute('SELECT COUNT(genre_id) FROM MexicoSpotify JOIN Genres ON MexicoSpotify.genre_id = Genres.id WHERE Genres.genre = ?', (item[0], ))
-        #l.append((cur.fetchone()[0], item[0]))
-    #return l
-    #pass
+    l = []
+    cur.execute('SELECT id FROM Genres')
+    genres = cur.fetchall()
+    for g in genres:
+        i = g[0]
+        cur.execute('SELECT COUNT(Spotify.broad_genre_id), Genres.genre FROM Genres INNER JOIN Spotify ON Genres.id = Spotify.broad_genre_id INNER JOIN Countries ON Countries.id = Spotify.country_id WHERE Genres.id=? AND Countries.country=?', (i, country))
+        l.append(cur.fetchone())
+    return l
+    pass
 
-#def writeCalculatedDataToFile(data, filename):
+def writeCalculatedDataToFile(data, filename):
     '''Accepts list of tuples for a playlist that include each genre and the number of songs of that genre in the playlist (data), and a file name to write the calculations to (filename). Creates the file in the directory, named after the filename parameter. Performs calculations and writes them to the file, then closes the file.'''
-    #dir = os.path.dirname(__file__)
-    #outFile = open(os.path.join(dir, filename), 'w')
-    #total = 0
-    #for item in data:
-        #total += item[0]
-    #outFile.write('Genre,Number of Songs,Percent of Total')
-    #for item in data:
-        #perc = round((item[0] / total) * 100)
-        #outFile.write('\n'+item[1]+','+str(item[0])+','+str(perc)+'%')
-    #outFile.write('\n')
-    #outFile.write('\nTotal Number of Songs: '+str(total))
-    #outFile.close()
-    #pass
+    dir = os.path.dirname(__file__)
+    outFile = open(os.path.join(dir, filename), 'w')
+    total = 0
+    for item in data:
+        total += item[0]
+    outFile.write('Genre,Number of Songs,Percent of Total')
+    for item in data:
+        perc = round((item[0] / total) * 100)
+        try:
+            outFile.write('\n'+item[1]+','+str(item[0])+','+str(perc)+'%')
+        except:
+            None
+    outFile.write('\n')
+    outFile.write('\nTotal Number of Songs: '+str(total))
+    outFile.close()
+    pass
 
-#def createPieChart(data, title):
+def createPieChart(data, title, cur):
     '''Accepts a list of tuples for a playlist that include each genre and the number of songs of that genre in the playlist (data), and a title for the pie chart (title). Omits genres with 0 songs in the playlist from being included in the pie chart and makes a footnote of which genres had no songs. Creates a pie chart with the genres that had more than 0 songs.'''
-    #data = sorted(data, reverse=True)
-    #no_zeros = [i for i in data if i[0] != 0]
-    #zeros = ', '.join([i[1] for i in data if i[0] == 0])
-    #labels = []
-    #sizes = []
-    #total = 0
-    #for tup in no_zeros:
-        #labels.append(tup[1])
-        #total += tup[0]
-    #for tup in no_zeros:
-        #size = (tup[0]/total) * 360
-        #sizes.append(size)
-    #colors = ['#e6ff00', '#1b96c6', '#ff952a', '#61ff68', '#e258c3', '#71f7ff', '#8682e6', '#ff646a', '#00b5af', '#ffe65b', '#5dc480']
-    #plt.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', pctdistance=0.85, textprops={'fontsize': 12})
-    #plt.axis('equal')
-    #plt.title('\n'.join(wrap(title,60)), fontsize=14, fontweight='bold')
-    #footnote = f'Genres with no songs in the top 50 this week: {zeros}'
-    #plt.annotate(footnote, xy=(-0.1,-0.1), xycoords='axes fraction', fontsize=9)
-    #plt.show()
-    #pass
+    data = sorted(data, reverse=True)
+    no_zeros = [i for i in data if i[0] != 0]
+    zeros = []
+    cur.execute('SELECT genre FROM Genres')
+    for item in cur:
+        genre = item[0]
+        if genre not in [i for t in no_zeros for i in t]:
+            zeros.append(genre)
+    zeros = ', '.join(zeros)
+    labels = []
+    sizes = []
+    total = 0
+    for tup in no_zeros:
+        labels.append(tup[1])
+        total += tup[0]
+    for tup in no_zeros:
+        size = (tup[0]/total) * 360
+        sizes.append(size)
+    colors = ['#e6ff00', '#1b96c6', '#ff952a', '#61ff68', '#e258c3', '#71f7ff', '#8682e6', '#ff646a', '#00b5af', '#ffe65b', '#5dc480']
+    plt.figure(figsize=(7,7))
+    plt.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', pctdistance=0.85, textprops={'fontsize': 12})
+    plt.axis('equal')
+    plt.title('\n'.join(wrap(title,60)), fontsize=14, fontweight='bold')
+    footnote = f'Genres with no songs in the top 50 this week: {zeros}'
+    plt.annotate(footnote, xy=(-0.1,-0.1), xycoords='axes fraction', fontsize=9)
+    plt.show()
+    pass
 
 
 def main():
@@ -228,7 +216,7 @@ def main():
     #CREATE SPOTIFY TABLE IN DATABASE
     createSpotifyTable(cur, conn)
 
-    #ADD DATA 25 ITEMS AT A TIME (RUN CODE AT LEAST 12 TIMES)
+    #ADD ALL DATA 25 ITEMS AT A TIME (RUN CODE AT LEAST 12 TIMES)
     try:
         cur.execute('SELECT id FROM SpotifyGenres WHERE id = (SELECT MAX (id) FROM SpotifyGenres)')
         start = cur.fetchone()
@@ -249,43 +237,27 @@ def main():
                 offset = 0
             storeData(all_data, cur, conn, offset)
 
-    #CREATE TABLE IN DATABASE AND ADD DATA 25 ITEMS AT A TIME (RUN CODE TWICE)
-    #try:
-        #cur.execute('SELECT * FROM CanadaSpotify')
-        #createCanadaTable(canada_data, cur, conn, 25)
-    #except:
-        #createCanadaTable(canada_data, cur, conn)
-    #try:
-        #cur.execute('SELECT * FROM USASpotify')
-        #createUSATable(usa_data, cur, conn, 25)
-    #except:
-        #createUSATable(usa_data, cur, conn)
-    #try:
-        #cur.execute('SELECT * FROM MexicoSpotify')
-        #createMexicoTable(mexico_data, cur, conn, 25)
-    #except:
-        #createMexicoTable(mexico_data, cur, conn)
-
     #GET GENRE COUNTS FROM DATABASE
-    #canada_genres = getCanadaGenreCounts(cur)
-    #usa_genres = getUSAGenreCounts(cur)
-    #mexico_genres = getMexicoGenreCounts(cur)
+    canada_genres = getGenreCounts('Canada', cur)
+    usa_genres = getGenreCounts('USA', cur)
+    mexico_genres = getGenreCounts('Mexico', cur)
+
 
     #WRITE CALCULATED DATA TO TEXT FILES
-    #c_title = 'spotifyCalculationsCanada.txt'
-    #writeCalculatedDataToFile(canada_genres, c_title)
-    #u_title = 'spotifyCalculationsUSA.txt'
-    #writeCalculatedDataToFile(usa_genres, u_title)
-    #m_title = 'spotifyCalculationsMexico.txt'
-    #writeCalculatedDataToFile(canada_genres, m_title)
+    c_title = 'spotifyCalculationsCanada.txt'
+    writeCalculatedDataToFile(canada_genres, c_title)
+    u_title = 'spotifyCalculationsUSA.txt'
+    writeCalculatedDataToFile(usa_genres, u_title)
+    m_title = 'spotifyCalculationsMexico.txt'
+    writeCalculatedDataToFile(mexico_genres, m_title)
 
     #CREATE PIE CHARTS SHOWING PROPORTIONS OF EACH GENRE BY NUMBER OF SONGS
-    #canada_title = 'Proportion of Genres of Top 50 Most Popular Songs in Canada on Spotify This Week'
-    #createPieChart(canada_genres, canada_title)
-    #usa_title = 'Proportion of Genres of Top 50 Most Popular Songs in the USA on Spotify This Week'
-    #createPieChart(usa_genres, usa_title)
-    #mexico_title = 'Proportion of Genres of Top 50 Most Popular Songs in Mexico on Spotify This Week'
-    #createPieChart(mexico_genres, mexico_title)
+    canada_title = 'Proportion of Genres of Top 50 Most Popular Songs in Canada on Spotify This Week'
+    createPieChart(canada_genres, canada_title, cur)
+    usa_title = 'Proportion of Genres of Top 50 Most Popular Songs in the USA on Spotify This Week'
+    createPieChart(usa_genres, usa_title, cur)
+    mexico_title = 'Proportion of Genres of Top 50 Most Popular Songs in Mexico on Spotify This Week'
+    createPieChart(mexico_genres, mexico_title, cur)
     pass
 
 
