@@ -2,6 +2,7 @@ import sqlite3
 import os
 import matplotlib.pyplot as plt
 from textwrap import wrap
+from numpy import False_
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 import re
@@ -76,71 +77,24 @@ def getPlaylistData(pid, sp, cur):
     return playlist_songs_info
     pass
 
-#def createSpotifyTable(data, cur, conn, offset=0):
-def createSpotifyTable(data, cur, conn, offset=0):
+def createSpotifyTable(cur, conn):
     ''''''
-    cur.execute('CREATE TABLE IF NOT EXISTS Spotify (id INTEGER PRIMARY KEY, song_name TEXT, genre_name TEXT, genre_id INTEGER, country TEXT, country_id INTEGER)')
+    cur.execute('CREATE TABLE IF NOT EXISTS Spotify (id INTEGER PRIMARY KEY, song_name TEXT, genre_id INTEGER, country_id INTEGER)')
     conn.commit()
-    #r = offset + 50
-    for i in range(len(data)):
+    pass
+
+def storeData(data, cur, conn, offset):
+    ''''''
+    r = offset + 25
+    for i in range(offset, r):
         song_info = data[i]
         cur.execute('SELECT id FROM Genres WHERE genre=?', (song_info[1], ))
         song_genre_id = cur.fetchall()[0][0]
         cur.execute('SELECT id FROM Countries WHERE country=?', (song_info[2], ))
         song_country_id = cur.fetchall()[0][0]
-       #try:
-            #cur.execute('SELECT id FROM Spotify')
-            #test = cur.fetchall()
-            #print(test)
-        #except:
-            #test = 0
-        #try:
-            #cur.execute('SELECT id FROM Spotify')
-            #offset = cur.fetchall()[-1][0]
-        #except:
-            #offset = 0
-        cur.execute('INSERT OR IGNORE INTO Spotify (id, song_name, genre_name, genre_id, country, country_id) VALUES (?,?,?,?,?,?)', (offset, song_info[0], song_info[1], song_genre_id, song_info[2], song_country_id))
+        cur.execute('INSERT OR IGNORE INTO Spotify (id, song_name, genre_id, country_id) VALUES (?,?,?,?)', (i, song_info[0], song_genre_id, song_country_id))
         conn.commit()
-        offset += 1
-    return offset
     pass
-
-
-
-
-
-#def createCanadaTable(data, cur, conn, offset=0):
-    '''Creates CanadaSpotify table in the database (music.db), if it doesn't already exist, with the cursor and connection objects passed in as parameters. Takes the offset paramater (an integer that defaults to 0 if not passed in otherwise as a parameter) and adds 25 to it to create a range with a length of 25 to add 25 items at a time to the database. Loops through the items in the list passed in as a parameter (data) to add items to the database.'''
-    #cur.execute('CREATE TABLE IF NOT EXISTS CanadaSpotify (id INTEGER PRIMARY KEY, song_name TEXT UNIQUE, genre_id INTEGER)')
-    #conn.commit()
-    #r = offset + 25
-    #for i in range(offset, r):
-        #song_info = data[i]
-        #cur.execute('INSERT OR IGNORE INTO CanadaSpotify (id,song_name,genre_id) VALUES (?,?,?)', (i, song_info[0], song_info[1]))
-        #conn.commit()    
-    #pass
-
-#def createUSATable(data, cur, conn, offset=0):
-    '''Creates USASpotify table in the database (music.db), if it doesn't already exist, with the cursor and connection objects passed in as parameters. Takes the offset paramater (an integer that defaults to 0 if not passed in otherwise as a parameter) and adds 25 to it to create a range with a length of 25 to add 25 items at a time to the database. Loops through the items in the list passed in as a parameter (data) to add items to the database.'''
-    #cur.execute('CREATE TABLE IF NOT EXISTS USASpotify (id INTEGER PRIMARY KEY, song_name TEXT UNIQUE, genre_id INTEGER)')
-    #conn.commit()
-    #r = offset + 25
-    #for i in range(offset, r):
-        #song_info = data[i]
-        #cur.execute('INSERT OR IGNORE INTO USASpotify (id,song_name,genre_id) VALUES (?,?,?)', (i, song_info[0], song_info[1]))
-        #conn.commit()
-    #pass
-
-#def createMexicoTable(data, cur, conn, offset=0):
-    '''Creates MexicoSpotify table in the database (music.db), if it doesn't already exist, with the cursor and connection objects passed in as parameters. Takes the offset paramater (an integer that defaults to 0 if not passed in otherwise as a parameter) and adds 25 to it to create a range with a length of 25 to add 25 items at a time to the database. Loops through the items in the list passed in as a parameter (data) to add items to the database.'''
-    #cur.execute('CREATE TABLE IF NOT EXISTS MexicoSpotify (id INTEGER PRIMARY KEY, song_name TEXT UNIQUE, genre_id INTEGER)')
-    #conn.commit()
-    #r = offset + 25
-    #for i in range(offset, r):
-        #song_info = data[i]
-        #cur.execute('INSERT OR IGNORE INTO MexicoSpotify (id,song_name,genre_id) VALUES (?,?,?)', (i, song_info[0], song_info[1]))
-        #conn.commit()
-    #pass
 
 #def getCanadaGenreCounts(cur):
     '''Uses the cursor object to select all the genres from the Genres table in the database (music.db), and then selects the count of how many songs of each genre are in the CanadaSpotify table by joining the Genres and CanadaSpotify tables on the genre ids. Returns the count and name of each genre as a tuple in a list of tuples.'''
@@ -244,15 +198,23 @@ def main():
     mexico_pid = '37i9dQZEVXbKUoIkUXteF6'
     mexico_data = getPlaylistData(mexico_pid, sp, cur)
 
-    #CREATE SPOTIFY TABLE IN DATABASE AND ADD DATA 25 ITEMS AT A TIME (RUN CODE X TIMES)
-    x = createSpotifyTable(canada_data, cur, conn)
-    y = createSpotifyTable(usa_data, cur, conn, x)
-    createSpotifyTable(mexico_data, cur, conn, y)
-    #createSpotifyTable(usa_data, cur, conn)
-    #createSpotifyTable(mexico_data, cur, conn)
+    #CREATE SPOTIFY TABLE IN DATABASE
+    createSpotifyTable(cur, conn)
 
+    #COMBINE DATA FROM CANADA, MEXICO, USA INTO ONE LIST TO STORE IN DATABASE
+    all_data = canada_data + usa_data + mexico_data
 
-
+    #ADD DATA 25 ITEMS AT A TIME (RUN CODE 6 TIMES)
+    cur.execute('SELECT * FROM Spotify')
+    num_rows = len(cur.fetchall())
+    if num_rows < len(all_data):
+        try:
+            cur.execute('SELECT id FROM Spotify WHERE id = (SELECT MAX (id) FROM Spotify)')
+            start = cur.fetchone()
+            offset = start[0] + 1
+        except:
+            offset = 0
+        storeData(all_data, cur, conn, offset)
 
     #CREATE TABLE IN DATABASE AND ADD DATA 25 ITEMS AT A TIME (RUN CODE TWICE)
     #try:
