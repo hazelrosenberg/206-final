@@ -1,16 +1,7 @@
-from nbformat import write
-import requests
 import sqlite3
-import json
 import os
-import sys
-import unittest
-import csv
 import matplotlib.pyplot as plt
-from  bs4 import BeautifulSoup
 from textwrap import wrap
-#from tabulate import tabulate #dont forget pip install tabulate
-import pprint
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 
@@ -156,7 +147,6 @@ def createPieChart(data, title):
     plt.title('\n'.join(wrap(title,60)), fontsize=14, fontweight='bold')
     footnote = f'Genres with no songs in the top 50 this week: {zeros}'
     plt.annotate(footnote, xy=(-0.1,-0.1), xycoords='axes fraction', fontsize=9)
-    #plt.tight_layout()
     plt.show()
     pass
 
