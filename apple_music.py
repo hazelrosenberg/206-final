@@ -232,19 +232,19 @@ def main():
 
     #WRITE CALCULATED DATA TO TEXT FILES
     c_title = 'appleMusicCalculationsCanada.txt'
-    #writeCalculatedDataToFile(canada_genres, c_title)
+    writeCalculatedDataToFile(canada_genres, c_title)
     u_title = 'appleMusicCalculationsUSA.txt'
-    #writeCalculatedDataToFile(usa_genres, u_title)
+    writeCalculatedDataToFile(usa_genres, u_title)
     m_title = 'appleMusicCalculationsMexico.txt'
-    #writeCalculatedDataToFile(mexico_genres, m_title)
+    writeCalculatedDataToFile(mexico_genres, m_title)
 
     #CREATE PIE CHARTS SHOWING PROPORTIONS OF EACH GENRE BY NUMBER OF SONGS
     canada_title = 'Proportion of Genres of Top 50 Most Popular Songs in Canada on Apple Music This Week'
-    #createPieChart(canada_genres, canada_title, cur)
+    createPieChart(canada_genres, canada_title, cur)
     usa_title = 'Proportion of Genres of Top 50 Most Popular Songs in the USA on Apple Music This Week'
-    #createPieChart(usa_genres, usa_title, cur)
+    createPieChart(usa_genres, usa_title, cur)
     mexico_title = 'Proportion of Genres of Top 50 Most Popular Songs in Mexico on Apple Music This Week'
-    #createPieChart(mexico_genres, mexico_title, cur)
+    createPieChart(mexico_genres, mexico_title, cur)
 
 
 if __name__ == '__main__':
