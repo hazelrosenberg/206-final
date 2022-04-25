@@ -30,7 +30,7 @@ def createSpotipyObject(filename):
     pass
 
 
-def getTopChartsData(url, sp, cur, country):
+def getTopChartsData(url, sp, country):
     '''Uses beautiful soup to scrape a website and gather data for the apple music top charts. Uses spotipy object to use the scraped data to determine the genre for each song. Uses a database cursor object to assign a genre_id to each song based of the song's genre from Spotify and the genres in the music.db table. Returns a list of tuples with (song_name, genre_id).'''
     r = requests.get(url)
     soup = BeautifulSoup(r.content, 'html.parser')
@@ -187,15 +187,15 @@ def main():
 
     #COLLECT USA TOP SONGS INFO USING BEAUTIFUL SOUP AND SPOTIPY OBJECT
     usa_url = 'https://kworb.net/charts/apple_s/us.html'
-    usa_data = getTopChartsData(usa_url, sp, cur, 'USA')
+    usa_data = getTopChartsData(usa_url, sp, 'USA')
 
     #COLLECT CANADA TOP SONGS INFO USING BEAUTIFUL SOUP AND SPOTIPY OBJECT
     canada_url = 'https://kworb.net/charts/apple_s/ca.html'
-    canada_data = getTopChartsData(canada_url, sp, cur, 'Canada')
+    canada_data = getTopChartsData(canada_url, sp, 'Canada')
 
     #COLLECT MEXICO TOP SONGS INFO USING BEAUTIFUL SOUP AND SPOTIPY OBJECT
     mexico_url = 'https://kworb.net/charts/apple_s/mx.html'
-    mexico_data = getTopChartsData(mexico_url ,sp, cur, 'Mexico')
+    mexico_data = getTopChartsData(mexico_url ,sp, 'Mexico')
 
     #COMBINE DATA FROM CANADA,  MEXICO, USA INTO ONE LIST TO STORE IN DATABASE
     all_data = canada_data + usa_data + mexico_data
@@ -232,19 +232,19 @@ def main():
 
     #WRITE CALCULATED DATA TO TEXT FILES
     c_title = 'appleMusicCalculationsCanada.txt'
-    writeCalculatedDataToFile(canada_genres, c_title)
+    #writeCalculatedDataToFile(canada_genres, c_title)
     u_title = 'appleMusicCalculationsUSA.txt'
-    writeCalculatedDataToFile(usa_genres, u_title)
+    #writeCalculatedDataToFile(usa_genres, u_title)
     m_title = 'appleMusicCalculationsMexico.txt'
-    writeCalculatedDataToFile(mexico_genres, m_title)
+    #writeCalculatedDataToFile(mexico_genres, m_title)
 
     #CREATE PIE CHARTS SHOWING PROPORTIONS OF EACH GENRE BY NUMBER OF SONGS
     canada_title = 'Proportion of Genres of Top 50 Most Popular Songs in Canada on Apple Music This Week'
-    createPieChart(canada_genres, canada_title, cur)
+    #createPieChart(canada_genres, canada_title, cur)
     usa_title = 'Proportion of Genres of Top 50 Most Popular Songs in the USA on Apple Music This Week'
-    createPieChart(usa_genres, usa_title, cur)
+    #createPieChart(usa_genres, usa_title, cur)
     mexico_title = 'Proportion of Genres of Top 50 Most Popular Songs in Mexico on Apple Music This Week'
-    createPieChart(mexico_genres, mexico_title, cur)
+    #createPieChart(mexico_genres, mexico_title, cur)
 
 
 if __name__ == '__main__':
