@@ -16,7 +16,6 @@ def setUpDatabase(db_name):
     pass
 
 def createSpotipyObject(filename):
-    '''Reads in text file and creates spotipy object with client id and client secret (stored in text file).'''
     source_dir = os.path.dirname(os.path.abspath(__file__))
     full_path = os.path.join(source_dir, filename)
     infile = open(full_path,'r', encoding='utf-8')
@@ -31,7 +30,6 @@ def createSpotipyObject(filename):
 
 
 def getTopChartsData(url, sp, country):
-    '''Uses beautiful soup to scrape a website and gather data for the apple music top charts. Uses spotipy object to use the scraped data to determine the genre for each song. Uses a database cursor object to assign a genre_id to each song based of the song's genre from Spotify and the genres in the music.db table. Returns a list of tuples with (song_name, genre_id).'''
     r = requests.get(url)
     soup = BeautifulSoup(r.content, 'html.parser')
     tags = soup.find_all('td', class_='mp text')
@@ -51,13 +49,11 @@ def getTopChartsData(url, sp, country):
     pass
 
 def createAppleMusicTable(cur, conn):
-    ''''''
     cur.execute('CREATE TABLE IF NOT EXISTS AppleMusic (id INTEGER PRIMARY KEY, song_name TEXT, specific_genre_id INTEGER, broad_genre_id INTEGER, country_id INTEGER)')
     conn.commit()
     pass
 
 def createAppleMusicGenresTable(cur, conn):
-    ''''''
     cur.execute('CREATE TABLE IF NOT EXISTS AppleMusicGenres (id INTEGER PRIMARY KEY, specific_genre TEXT UNIQUE, broad_genre_id INTEGER)')
     conn.commit()
     pass
@@ -87,7 +83,6 @@ def storeGenresData(data, cur, conn, offset):
     pass
     
 def storeData(data, cur, conn, offset):
-    ''''''
     r = offset + 25
     for i in range(offset, r):
         song_info = data[i]
@@ -101,19 +96,8 @@ def storeData(data, cur, conn, offset):
         conn.commit()
     pass
 
-def getCanadaGenreCounts(cur):
-    '''Uses the cursor object to select all the genres from the Genres table in the database (music.db), and then selects the count of how many songs of each genre are in the CanadaAppleMusic table by joining the Genres and CanadaAppleMusic tables on the genre ids. Returns the count and name of each genre as a tuple in a list of tuples.'''
-    l = []
-    cur.execute('SELECT genre FROM Genres')
-    x = cur.fetchall()
-    for item in x:
-        cur.execute('SELECT COUNT(genre_id) FROM CanadaAppleMusic JOIN Genres ON CanadaAppleMusic.genre_id = Genres.id WHERE Genres.genre = ?', (item[0], ))
-        l.append((cur.fetchone()[0], item[0]))
-    return l
-    pass
 
 def getGenreCounts(country, cur):
-    '''Uses the cursor object to select all the genres from the Genres table in the database (music.db), and then selects the count of how many songs of each genre are in the USASpotify table by joining the Genres and MexicoSpotify tables on the genre ids. Returns the count and name of each genre as a tuple in a list of tuples.'''
     l = []
     cur.execute('SELECT id FROM Genres')
     genres = cur.fetchall()
@@ -125,7 +109,6 @@ def getGenreCounts(country, cur):
     pass
 
 def writeCalculatedDataToFile(data, filename):
-    '''Accepts list of tuples for a playlist that include each genre and the number of songs of that genre in the playlist (data), and a file name to write the calculations to (filename). Creates the file in the directory, named after the filename parameter. Performs calculations and writes them to the file, then closes the file.'''
     dir = os.path.dirname(__file__)
     outFile = open(os.path.join(dir, filename), 'w')
     total = 0
@@ -144,7 +127,6 @@ def writeCalculatedDataToFile(data, filename):
     pass
 
 def createPieChart(data, title, cur):
-    '''Accepts a list of tuples for a playlist that include each genre and the number of songs of that genre in the playlist (data), and a title for the pie chart (title). Omits genres with 0 songs in the playlist from being included in the pie chart and makes a footnote of which genres had no songs. Creates a pie chart with the genres that had more than 0 songs.'''
     data = sorted(data, reverse=True)
     no_zeros = [i for i in data if i[0] != 0]
     zeros = []
